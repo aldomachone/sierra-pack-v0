@@ -1,17 +1,20 @@
 #pragma once
 #include "sierrachart.h"
 
-// === Compat & indexation SG (v0) ===
 namespace du {
 
-  // Compat d'index SG simple : retourne newIdx=oldIdx (v0)
-  inline int compatIdx(int oldIdx) { return oldIdx; }
+// v0: identité. Versionner ici si l’index change plus tard.
+inline int compatIdx(int oldIdx){ return oldIdx; }
 
-  // Helper lecture SG d'une autre étude avec compat
-  inline bool getStudyArray(const SCStudyInterfaceRef& sc, int studyId, int oldIdx, SCFloatArray& out)
-  {
-    const int sg = compatIdx(oldIdx);
-    return sc.GetStudyArrayUsingID(studyId, sg, out) != 0;
-  }
+inline bool getStudyArray(const SCStudyInterfaceRef& sc, int studyId, int oldIdx, SCFloatArray& out){
+  return sc.GetStudyArrayUsingID(studyId, compatIdx(oldIdx), out) != 0;
+}
+
+inline bool tryGetStudyValue(const SCStudyInterfaceRef& sc, int studyId, int oldIdx, int idx, float& v){
+  SCFloatArray arr;
+  if(!getStudyArray(sc, studyId, oldIdx, arr)) return false;
+  v = arr[idx];
+  return true;
+}
 
 } // namespace du
