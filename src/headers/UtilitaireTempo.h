@@ -5,12 +5,13 @@
 namespace du {
 
 /////////////////////////////////////////////////////////////////////////////////////////////// nowMs : horodatage mur réel en millisecondes
-  inline long long nowMs(const SCStudyInterfaceRef& sc)
+  inline long long 	nowMs(const SCStudyInterfaceRef& sc)
   {
     // SCDateTimeMS à double jours → convertir en ms
-    const SCDateTimeMS t = sc.CurrentSystemDateTimeMS;
-    const double days = (double)t;
-    const double ms = days * 24.0 * 60.0 * 60.0 * 1000.0;
+    const 			SCDateTimeMS t 	= sc.CurrentSystemDateTimeMS;
+    const double 	days 			= (double)t					;
+    const double 	ms 				= days * 24.0 * 60.0 * 60.0 * 1000.0;
+	
     return (long long)(ms + 0.5);
   }
 
