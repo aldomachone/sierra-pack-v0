@@ -37,3 +37,4 @@ inline double secFromBars(const SCStudyInterfaceRef& sc, int bars){
 }
 
 } // namespace du
+
