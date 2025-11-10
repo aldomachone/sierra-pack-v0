@@ -39,9 +39,10 @@ inline long long nowMs(const SCStudyInterfaceRef& sc) {
 
 // ms de la barre idx selon l’horloge du chart.
 inline long long barTimeMs(const SCStudyInterfaceRef& sc, int idx) {
+  if (idx < 0) idx = 0;
+  if (idx >= sc.ArraySize) idx = sc.ArraySize ? sc.ArraySize - 1 : 0;
   return toMs(sc.BaseDateTimeIn[idx]);
 }
-
 // Nanosecondes système (non dispo nativement dans ACSIL). Placeholder neutre.
 inline long long duNowNs(SCStudyInterfaceRef) { return 0; }
 
