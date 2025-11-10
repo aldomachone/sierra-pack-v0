@@ -63,7 +63,7 @@ inline bool duIsNewTradingDay(SCStudyInterfaceRef sc, int lastDateYMD) {
 
 // Retourne l’index de la première barre de la journée courante. O(N backscan) borné.
 inline int firstIndexOfToday(const SCStudyInterfaceRef& sc) {
-  const int i0 = sc.Index;
+  const int i0  = sc.Index;
   const int ymd = sc.BaseDateTimeIn[i0].GetDateYMD();
   int i = i0;
   while (i > 0 && sc.BaseDateTimeIn[i - 1].GetDateYMD() == ymd) --i;
@@ -74,9 +74,9 @@ inline int firstIndexOfToday(const SCStudyInterfaceRef& sc) {
 // et l’horloge “chart” de la barre courante.
 inline long long duSessionElapsedMs(SCStudyInterfaceRef sc) {
   if (sc.ArraySize <= 0) return 0;
-  const int iStart = firstIndexOfToday(sc);
-  const long long tStart = barTimeMs(sc, iStart);
-  const long long tNow   = barTimeMs(sc, sc.Index);
+  const int        iStart = firstIndexOfToday(sc);
+  const long long  tStart = barTimeMs(sc, iStart);
+  const long long  tNow   = barTimeMs(sc, sc.Index);
   return tNow >= tStart ? (tNow - tStart) : 0;
 }
 
@@ -140,7 +140,7 @@ inline double secFromBars(const SCStudyInterfaceRef& sc, int bars) {
 // Estime l’écart horloge système vs horloge chart en secondes.
 // Signé : positif si système “en avance” vs chart.
 inline double duClockSkewEstimate(SCStudyInterfaceRef sc, long long chartNowMs) {
-  const long long sysMs = nowMs(sc);
+  const long long sysMs  = nowMs(sc);
   const long long skewMs = static_cast<long long>(sysMs) - static_cast<long long>(chartNowMs);
   return static_cast<double>(skewMs) / kSecToMs;
 }
@@ -151,7 +151,7 @@ inline double duClockSkewEstimate(SCStudyInterfaceRef sc, long long chartNowMs) 
 
 // Debounce paramétrique :
 // - lastFireMs : timestamp ms du dernier “fire” (à conserver par l’appelant)
-// - nowMs      : horloge ms courante
+// - nowMsVal   : horloge ms courante
 // - minGapMs   : écart minimal entre deux triggers
 // - state      : compteur d’événements déclenchés
 // Retourne true si un déclenchement est autorisé et met à jour lastFireMs + state.
