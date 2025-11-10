@@ -1,48 +1,97 @@
 #pragma once
 #include "sierrachart.h"
 
-// ===== Pack v0 — Superset headers communs =====
-// Core temps / utilitaires
-#include "UtilitaireTempo.h"
-#include "UtilitaireSanitize.h"
-#include "UtilitaireCompat.h"
+// ===========================
+// Pack v0 — Umbrella headers
+// ===========================
+// Toggle familles (1 = on, 0 = off). Tu peux les définir au projet ou en tête des .cpp.
+#ifndef PACK_V0_ENABLE_CORE
+  #define PACK_V0_ENABLE_CORE     1
+#endif
+#ifndef PACK_V0_ENABLE_MLP
+  #define PACK_V0_ENABLE_MLP      1
+#endif
+#ifndef PACK_V0_ENABLE_DOM
+  #define PACK_V0_ENABLE_DOM      1
+#endif
+#ifndef PACK_V0_ENABLE_TAPE
+  #define PACK_V0_ENABLE_TAPE     1
+#endif
+#ifndef PACK_V0_ENABLE_CONTEXTE
+  #define PACK_V0_ENABLE_CONTEXTE 1
+#endif
+#ifndef PACK_V0_ENABLE_ZONES
+  #define PACK_V0_ENABLE_ZONES    1
+#endif
+#ifndef PACK_V0_ENABLE_MTF
+  #define PACK_V0_ENABLE_MTF      1
+#endif
+#ifndef PACK_V0_ENABLE_MEMORY_RISK
+  #define PACK_V0_ENABLE_MEMORY_RISK 1
+#endif
 
-// I/O & MLP
-#include "UtilitaireMLP.h"
+// -------- Core temps / utilitaires
+#if PACK_V0_ENABLE_CORE
+  #include "UtilitaireTempo.h"
+  #include "UtilitaireSanitize.h"
+  #include "UtilitaireCompat.h"
+#endif
 
-// DOM
-#include "UtilitaireDom.h"
-#include "UtilitaireDomSignal.h"
-#include "UtilitaireDomImbalSweep.h"
-#include "UtilitaireDomSignalMomentum.h"
-#include "UtilitaireDomVacuum.h"
-#include "UtilitaireStopRun.h"
+// -------- I/O & MLP
+#if PACK_V0_ENABLE_MLP
+  #include "UtilitaireMLP.h"
+#endif
 
-// Tape
-#include "UtilitaireTapePace.h"
-#include "UtilitaireTapeBVC.h"
-#include "UtilitaireTapeSweep.h"
-#include "UtilitaireTapeExhaust.h"
+// -------- DOM
+#if PACK_V0_ENABLE_DOM
+  #include "UtilitaireDom.h"
+  #include "UtilitaireDomSignal.h"
+  #include "UtilitaireDomImbalSweep.h"
+  #include "UtilitaireDomSignalMomentum.h"
+  #include "UtilitaireDomVacuum.h"
+  #include "UtilitaireStopRun.h"
+#endif
 
-// Contexte (v0 proxies)
-#include "UtilitaireVWAP.h"
-#include "UtilitaireProfile.h"
-#include "UtilitaireOHLC.h"
-#include "UtilitaireRanges.h"
+// -------- Tape
+#if PACK_V0_ENABLE_TAPE
+  #include "UtilitaireTapePace.h"
+  #include "UtilitaireTapeBVC.h"
+  #include "UtilitaireTapeSweep.h"
+  #include "UtilitaireTapeExhaust.h"
+#endif
 
-// Zones / Niveaux
-#include "UtilitairePivots.h"
-#include "UtilitaireFibo.h"
-#include "UtilitaireReloadZone.h"
-#include "UtilitaireFVG.h"
-#include "UtilitaireZones.h"
-#include "UtilitaireConfluence.h"
+// -------- Contexte
+#if PACK_V0_ENABLE_CONTEXTE
+  #include "UtilitaireVWAP.h"
+  #include "UtilitaireProfile.h"
+  #include "UtilitaireOHLC.h"
+  #include "UtilitaireRanges.h"
+#endif
 
-// MTF / Overlay
-#include "UtilitaireMTF.h"
-#include "UtilitaireOverlay.h"
+// -------- Zones / Niveaux
+#if PACK_V0_ENABLE_ZONES
+  #include "UtilitairePivots.h"
+  #include "UtilitaireFibo.h"
+  #include "UtilitaireReloadZone.h"
+  #include "UtilitaireFVG.h"
+  #include "UtilitaireZones.h"
+  #include "UtilitaireConfluence.h"
+#endif
 
-// Mémoire / Réponse / Risque
-#include "UtilitaireMDHG.h"
-#include "UtilitairePRF.h"
-#include "UtilitaireLiqRisk.h"
+// -------- MTF / Overlay
+#if PACK_V0_ENABLE_MTF
+  #include "UtilitaireMTF.h"
+  #include "UtilitaireOverlay.h"
+#endif
+
+// -------- Mémoire / Réponse / Risque
+#if PACK_V0_ENABLE_MEMORY_RISK
+  #include "UtilitaireMDHG.h"
+  #include "UtilitairePRF.h"
+  #include "UtilitaireLiqRisk.h"
+#endif
+
+// Version du pack (simple macro pour trace/compat)
+#ifndef PACK_V0_VERSION
+  #define PACK_V0_VERSION 0x00010000  // 1.0.0
+#endif
