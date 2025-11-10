@@ -4,9 +4,9 @@
 // OHLC v0: niveaux journaliers courants via scan de la journée
 namespace du {
 
-struct OHLC { float O=0, H=0, L=0, C=0; };
+struct 			OHLC 																	{ float O=0, H=0, L=0, C=0; };
 
-inline OHLC olDaily(const SCStudyInterfaceRef& sc)
+inline 			OHLC olDaily	(const SCStudyInterfaceRef& sc)
 {
   OHLC o{};
   const int i = sc.Index;
@@ -26,5 +26,8 @@ inline OHLC olDaily(const SCStudyInterfaceRef& sc)
   o.C = (float)sc.Close[i];
   return o;
 }
+
+inline void 	olLevelsTF		(int /*tf*/, double& O,double& H,double& L,double& C)	{ O=H=L=C=0.0; }
+inline int  	olBreakState	(double price,double level)								{ if(price>level) return 2; if(price<level) return 0; return 1; }
 
 } // namespace du

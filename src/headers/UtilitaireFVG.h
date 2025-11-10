@@ -4,10 +4,10 @@
 // Fair Value Gap v0 (3-bar gap)
 namespace du {
 
-struct Fvg { bool up=false, dn=false; float hi=0, lo=0; };
-
+struct 			Fvg 																										{ bool up=false, dn=false; float hi=0, lo=0; };
+struct 			fvgRec																										{ double lo{0}, hi{0}; };
 // FVG up si Low[n-1] > High[n-3], dn si High[n-1] < Low[n-3]
-inline Fvg fvgDetect(const SCStudyInterfaceRef& sc, int n /* index courant */)
+inline 			Fvg fvgDetect	(const SCStudyInterfaceRef& sc, int n /* index courant */)
 {
   Fvg f{};
   if (n < 2) return f;
@@ -23,5 +23,8 @@ inline Fvg fvgDetect(const SCStudyInterfaceRef& sc, int n /* index courant */)
   (void)h2; (void)l2; // non utilisés v0
   return f;
 }
+
+inline int   	fvgDetect		(const double* /*candles*/, int /*n*/, int /*minTicks*/, fvgRec* /*out*/, int /*maxOut*/)	{ return 0; }
+inline double 	fvgFillPct		(double /*price*/, const fvgRec& /*fvg*/)													{ return 0.0; }
 
 } // namespace du

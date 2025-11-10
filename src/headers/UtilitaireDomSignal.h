@@ -392,7 +392,7 @@ static inline void 		duPullStackEngineCore		(
 
 // Retourne true si le DOM est figé depuis >= maxBars barres.
 
-static inline bool duUpdateDomStaleBars(
+static inline bool 		duUpdateDomStaleBars(
   SCStudyInterfaceRef sc,
   int persistentLastDomId,
   int persistentPrevBidId,
@@ -436,7 +436,7 @@ static inline bool duUpdateDomStaleBars(
 // - pct == 0  -> normalisation désactivée explicitement
 // Le warning est loggé une seule fois par instance de study via persistentWarnId.
 
-static inline int duClampEmaPctWithWarn(
+static inline int 		duClampEmaPctWithWarn(
   SCStudyInterfaceRef sc,
   int pct,
   int persistentWarnId,
@@ -472,7 +472,7 @@ static inline int duClampEmaPctWithWarn(
 // Lecture d’un SG d’une étude ENGINE référencée par InEngineStudy.
 // Tolère ENGINE sur un autre chart. Ne dépend pas de la région.
 // 'lastIndex' est ignoré ici pour éviter les faux négatifs.
-static inline bool duPsfEngineGetArray(
+static inline bool 		duPsfEngineGetArray(
   SCStudyInterfaceRef sc,
   SCInputRef&         InEngineStudy,
   int                 subgraphIndex,
@@ -491,15 +491,13 @@ static inline bool duPsfEngineGetArray(
 }
 
 // Index sûr même si l’historique ENGINE et celui du lecteur n’ont pas la même taille.
-static inline int duPsfIdxCompat(int readerLast, const SCFloatArray& engArr)
+static inline int 		duPsfIdxCompat(int readerLast, const SCFloatArray& engArr)
 {
   const int n = engArr.GetArraySize();
   return n > 0 ? (readerLast < n ? readerLast : n - 1) : -1;
 }
 
-
-
-static inline bool duPsfEngineReadValue(
+static inline bool 		duPsfEngineReadValue(
   SCStudyInterfaceRef sc,
   SCInputRef& InEngineStudy,
   int subgraphIndex,
@@ -517,6 +515,19 @@ static inline bool duPsfEngineReadValue(
   return true;
 }
 
+inline bool 			duHysteresis	(int& state,double x,double onPct,double offPct){ if(state==0 && x>=onPct) state=1; else if(state==1 && x<=offPct) state=0; return state==1; }
+inline bool 			duMSurN			(int& counter,bool cond,int M,int N){ if(cond){ if(++counter>=M) return true; } else { if(++counter>=N) counter=0; } return false; }
+inline bool 			duCooldown		(long long& last,long long now,long long cooldownMs){ if(now-last<cooldownMs) return false; last=now; return true; }
 
+struct 					duP2Buf			{ double dummy; };
+inline void   			duP2_Init		(duP2Buf*,int){}
+inline void   			duP2_Update		(duP2Buf*,double){}
+inline double 			duP2_Quantile	(duP2Buf*,double){ return 0.0; }
+
+inline int 				duNmsTopK		(const double* v,int N,int /*radius*/,double /*promPct*/,int K,int* keepMask){
+  if(!keepMask) return 0; for(int i=0;i<N;++i) keepMask[i]=0; for(int i=0;i<N && i<K;++i) keepMask[i]=1; return K<N?K:N;
+}
+inline double 			duPctOfMax		(double x,double mx,double eps){ return mx>eps? x/mx : 0.0; }
+inline double 			duSmoothStep01	(double x){ if(x<=0) return 0; if(x>=1) return 1; return x*x*(3-2*x); }
 
 } // namespace du
