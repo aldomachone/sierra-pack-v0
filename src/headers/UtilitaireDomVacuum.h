@@ -28,25 +28,25 @@ namespace du {
 // -----------------------------------------------------------------------------
 // Compat v0 (inchangé)
 // -----------------------------------------------------------------------------
-inline float vacNearDrop(const SCStudyInterfaceRef& sc, int nearLevels, double prevNearSum)
+inline float 	vacNearDrop					(const SCStudyInterfaceRef& sc, int nearLevels, double prevNearSum)
 {
   double now=0.0; const int N = nearLevels<0? 0 : nearLevels;
   for (int li=0; li<N; ++li) now += du::readBidQtyAt(sc, li) + du::readAskQtyAt(sc, li);
   return (float)(prevNearSum - now); // >0 si chute
 }
 
-inline bool duVacuumDrop(const double* prev,const double* now,int avail,double thrAbs,double thrPct,int /*minLifeMs*/,long long /*nowMs*/)
+inline bool 	duVacuumDrop				(const double* prev,const double* now,int avail,double thrAbs,double thrPct,int /*minLifeMs*/,long long /*nowMs*/)
 {
   double loss=0, base=0; for(int i=0;i<avail;++i){ const double p = prev?prev[i]:0.0; const double n = now?now[i]:0.0; if (p>n) loss += (p-n); base += p; }
   return loss>thrAbs || (base>1e-12 && loss/base > thrPct);
 }
 
-inline double duVacuumScore(double nearLoss,double farLoss){ return 0.7*nearLoss + 0.3*farLoss; }
+inline double 	duVacuumScore				(double nearLoss,double farLoss){ return 0.7*nearLoss + 0.3*farLoss; }
 
 // -----------------------------------------------------------------------------
 // v1 — enrichi
 // -----------------------------------------------------------------------------
-struct DvBands
+struct 			DvBands
 {
   // Bandes côté BID et ASK sont symétriques, on lit les deux et on somme.
   int startNear = 0;  int countNear = 10;
@@ -54,7 +54,7 @@ struct DvBands
   int startFar  = 30; int countFar  = 30; // jusqu'à 59 → 60 niveaux
 };
 
-struct DvParams
+struct 			DvParams
 {
   DvBands bands{};
   double alphaPct     = 70.0;   // EMA du score
@@ -69,22 +69,22 @@ struct DvParams
   double spreadMaxTks = 4.0;    // gate spread
 };
 
-enum DvPhase : int { DV_IDLE=0, DV_ARMED=1, DV_TRIGGERED=2, DV_COOLDOWN=3 };
+enum 			DvPhase : int 				{ DV_IDLE=0, DV_ARMED=1, DV_TRIGGERED=2, DV_COOLDOWN=3 };
 
-struct DvAgg
+struct 			DvAgg
 {
   // Sums par bande (Bid+Ask)
   double near=0, mid=0, far=0, total=0;
 };
 
-struct DvLoss
+struct 			DvLoss
 {
   // Pertes punitives p>=n ? p-n : 0 ; rel = loss / max(p,eps)
   double nearAbs=0, midAbs=0, farAbs=0, totAbs=0;
   double nearRel=0, midRel=0, farRel=0, totRel=0;
 };
 
-struct DvState
+struct 			DvState
 {
   // Derniers agrégats
   DvAgg  prev{};     // tick précédent
@@ -111,14 +111,14 @@ struct DvState
 };
 
 // Utilitaires -----------------------------------------------------------------
-inline double dv_sum_range_read(const SCStudyInterfaceRef& sc, bool isBid, int start, int count)
+inline double 	dv_sum_range_read			(const SCStudyInterfaceRef& sc, bool isBid, int start, int count)
 {
   if (start<0) start=0; if (count<=0) return 0.0; const int end = start + count - 1; double s=0.0;
   for (int li=start; li<=end; ++li) s += isBid? du::readBidQtyAt(sc, li) : du::readAskQtyAt(sc, li);
   return s;
 }
 
-inline DvAgg dv_read_agg_bands(const SCStudyInterfaceRef& sc, const DvBands& b)
+inline 			DvAgg dv_read_agg_bands		(const SCStudyInterfaceRef& sc, const DvBands& b)
 {
   DvAgg a{};
   const double bN = dv_sum_range_read(sc, /*bid*/true , b.startNear, b.countNear);
@@ -130,7 +130,7 @@ inline DvAgg dv_read_agg_bands(const SCStudyInterfaceRef& sc, const DvBands& b)
   a.near = bN + aN; a.mid = bM + aM; a.far = bF + aF; a.total = a.near + a.mid + a.far; return a;
 }
 
-inline DvLoss dv_compute_loss(const DvAgg& P, const DvAgg& N)
+inline 			DvLoss dv_compute_loss		(const DvAgg& P, const DvAgg& N)
 {
   auto rel = [](double loss, double base){ return base>1e-12? loss/base : 0.0; };
   DvLoss L{}; L.nearAbs = std::max(0.0, P.near - N.near); L.midAbs  = std::max(0.0, P.mid - N.mid);
@@ -139,15 +139,15 @@ inline DvLoss dv_compute_loss(const DvAgg& P, const DvAgg& N)
   return L;
 }
 
-inline double dv_score(const DvLoss& L)
+inline double 	dv_score					(const DvLoss& L)
 { // pondération near/mid/far
   return 0.60*L.nearRel + 0.30*L.midRel + 0.10*L.farRel + 0.001*L.totAbs; // bonus absolu léger
 }
 
-inline double dv_ema(double prev,double x,double aPct){ const double a = aPct>0.0? aPct/100.0 : 0.0; return prev + a*(x - prev); }
+inline double 	dv_ema						(double prev,double x,double aPct){ const double a = aPct>0.0? aPct/100.0 : 0.0; return prev + a*(x - prev); }
 
 // Gates simples: stale DOM, profondeur min, spread max
-inline bool dv_gates_ok(const SCStudyInterfaceRef& sc, const DvParams& p)
+inline bool 	dv_gates_ok					(const SCStudyInterfaceRef& sc, const DvParams& p)
 {
   if (p.requireFresh && du::domIsStale(sc)) return false;
   // profondeur dispo
@@ -159,7 +159,7 @@ inline bool dv_gates_ok(const SCStudyInterfaceRef& sc, const DvParams& p)
 }
 
 // Mise à jour par tick. Retourne true si événement vacuum déclenché sur CE tick.
-inline bool dv_update_tick(SCStudyInterfaceRef sc, DvState& st, const DvParams& p, long long nowMs, int& outPhase)
+inline bool 	dv_update_tick				(SCStudyInterfaceRef sc, DvState& st, const DvParams& p, long long nowMs, int& outPhase)
 {
   outPhase = st.phase; st.tLast = nowMs;
 
@@ -206,7 +206,7 @@ inline bool dv_update_tick(SCStudyInterfaceRef sc, DvState& st, const DvParams& 
 // 6 nearRel, 7 midRel, 8 farRel, 9 totRel, 10 phase, 11 consecOver,
 // 12 consecUnder, 13 dt_since_first_ms, 14 dt_since_trig_ms, 15 total_now
 // -----------------------------------------------------------------------------
-inline int dv_features_v1(const DvState& st, const DvParams& /*p*/, long long nowMs, double* out)
+inline int 		dv_features_v1				(const DvState& st, const DvParams& /*p*/, long long nowMs, double* out)
 {
   if(!out) return 0; const long long dtFirst = (st.tFirstLoss>0? nowMs - st.tFirstLoss : 0); const long long dtTrig = (st.tTrig>0? nowMs - st.tTrig : 0);
   out[0] = du::sanitize(st.score);

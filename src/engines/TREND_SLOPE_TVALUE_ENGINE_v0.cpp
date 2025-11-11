@@ -4,10 +4,10 @@
 #include "sierrachart.h"
 #include "Pack_v0.h"
 
-SCSFExport scsf_DRAWDOWN_DEPTH_DURATION_ENGINE_v0(SCStudyInterfaceRef sc)
+SCSFExport scsf_TREND_SLOPE_TVALUE_ENGINE_v0(SCStudyInterfaceRef sc)
 {
   if(sc.SetDefaults){
-    sc.GraphName="DRAWDOWN_DEPTH_DURATION_ENGINE_v0"; sc.AutoLoop=0; sc.UpdateAlways=0; sc.GraphRegion=0; sc.ValueFormat=26;
+    sc.GraphName="TREND_SLOPE_TVALUE_ENGINE_v0"; sc.AutoLoop=0; sc.UpdateAlways=0; sc.GraphRegion=0; sc.ValueFormat=26;
     sc.Subgraph[1].Name = "SG01";
     sc.Subgraph[1].DrawStyle = DRAWSTYLE_IGNORE;
     sc.Subgraph[1].DrawZeros = false;
@@ -24,12 +24,13 @@ SCSFExport scsf_DRAWDOWN_DEPTH_DURATION_ENGINE_v0(SCStudyInterfaceRef sc)
     sc.Subgraph[4].DrawStyle = DRAWSTYLE_IGNORE;
     sc.Subgraph[4].DrawZeros = false;
     sc.Subgraph[4].DisplayAsMainPriceGraphValue = 0;
+    sc.Input[0].Name="01. Fenêtre bars"; sc.Input[0].SetInt(60);
     sc.DrawZeros=false; return;
   }
-  int idx=sc.ArraySize-1; if(idx<1) return;
-  static double peak=-1e300; static int start=0;
-  if(sc.IsFullRecalculation){ peak=-1e300; start=idx; }
-  if(sc.Close[idx]>peak){ peak=sc.Close[idx]; start=idx; }
-  double depth = peak - sc.Close[idx]; int dur = idx - start;
-  sc.Subgraph[1][idx]=depth; sc.Subgraph[2][idx]=dur;
+  int idx=sc.ArraySize-1; int W=sc.Input[0].GetInt(); if(idx<W) return;
+  double sx=0,sy=0,sxx=0,sxy=0; for(int i=idx-W+1;i<=idx;++i){ double x=i; double y=sc.Close[i]; sx+=x; sy+=y; sxx+=x*x; sxy+=x*y; }
+  double den=W*sxx - sx*sx; if(den==0) return; double beta=(W*sxy - sx*sy)/den;
+  double alpha=(sy - beta*sx)/W; double se2=0; for(int i=idx-W+1;i<=idx;++i){ double x=i; double y=sc.Close[i]; double yhat = alpha + beta*x; double e=y-yhat; se2+=e*e; }
+  se2 /= (W>2? W-2:1); double varb = (W/den)*se2; double t = (varb>0? beta/sqrt(varb):0.0);
+  sc.Subgraph[1][idx]=beta; sc.Subgraph[2][idx]=t;
 }

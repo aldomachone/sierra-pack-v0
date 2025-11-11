@@ -4,10 +4,10 @@
 #include "sierrachart.h"
 #include "Pack_v0.h"
 
-SCSFExport scsf_DRAWDOWN_DEPTH_DURATION_ENGINE_v0(SCStudyInterfaceRef sc)
+SCSFExport scsf_UPSIDE_DRAWDOWN_ENGINE_v0(SCStudyInterfaceRef sc)
 {
   if(sc.SetDefaults){
-    sc.GraphName="DRAWDOWN_DEPTH_DURATION_ENGINE_v0"; sc.AutoLoop=0; sc.UpdateAlways=0; sc.GraphRegion=0; sc.ValueFormat=26;
+    sc.GraphName="UPSIDE_DRAWDOWN_ENGINE_v0"; sc.AutoLoop=0; sc.UpdateAlways=0; sc.GraphRegion=0; sc.ValueFormat=26;
     sc.Subgraph[1].Name = "SG01";
     sc.Subgraph[1].DrawStyle = DRAWSTYLE_IGNORE;
     sc.Subgraph[1].DrawZeros = false;
@@ -27,9 +27,9 @@ SCSFExport scsf_DRAWDOWN_DEPTH_DURATION_ENGINE_v0(SCStudyInterfaceRef sc)
     sc.DrawZeros=false; return;
   }
   int idx=sc.ArraySize-1; if(idx<1) return;
-  static double peak=-1e300; static int start=0;
-  if(sc.IsFullRecalculation){ peak=-1e300; start=idx; }
-  if(sc.Close[idx]>peak){ peak=sc.Close[idx]; start=idx; }
-  double depth = peak - sc.Close[idx]; int dur = idx - start;
-  sc.Subgraph[1][idx]=depth; sc.Subgraph[2][idx]=dur;
+  static double trough=1e300; static int start=0;
+  if(sc.IsFullRecalculation){ trough=1e300; start=idx; }
+  if(sc.Close[idx]<trough){ trough=sc.Close[idx]; start=idx; }
+  double height = sc.Close[idx] - trough; int dur = idx - start;
+  sc.Subgraph[1][idx]=height; sc.Subgraph[2][idx]=dur;
 }

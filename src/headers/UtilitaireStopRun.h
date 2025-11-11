@@ -25,17 +25,17 @@ namespace du {
 // -----------------------------------------------------------------------------
 // Compat v0 (inchangé)
 // -----------------------------------------------------------------------------
-inline bool srTriggerSimple(const SCStudyInterfaceRef& sc, int idx, float thrAbsDelta)
-{ return fabsf(du::bvcDelta(sc, idx)) >= thrAbsDelta; }
+inline bool 	srTriggerSimple		(const SCStudyInterfaceRef& sc, int idx, float thrAbsDelta){
+	return fabsf(du::bvcDelta(sc, idx)) >= thrAbsDelta; }
 
-inline bool duStopRunGate(int /*micropriceState*/, bool /*paceGate*/){ return true; }
-inline double duStopRunScore(double ofi,double sweep,double vacuum,double imbalance)
-{ return 0.4*ofi + 0.3*sweep + 0.2*vacuum + 0.1*imbalance; }
+inline bool 	duStopRunGate		(int /*micropriceState*/, bool /*paceGate*/){ return true; }
+inline double 	duStopRunScore		(double ofi,double sweep,double vacuum,double imbalance){
+	return 0.4*ofi + 0.3*sweep + 0.2*vacuum + 0.1*imbalance; }
 
 // -----------------------------------------------------------------------------
 // v1 — enrichi
 // -----------------------------------------------------------------------------
-struct SrParams
+struct 			SrParams
 {
   // Lissage et pondération
   double alphaPct      = 70.0;   // EMA du score
@@ -57,9 +57,9 @@ struct SrParams
   int    requirePaceOK  = 1;     // 0/1
 };
 
-enum SrPhase : int { SR_IDLE=0, SR_ARMED=1, SR_TRIGGERED=2, SR_COOLDOWN=3 };
+enum 			SrPhase : int 		{ SR_IDLE=0, SR_ARMED=1, SR_TRIGGERED=2, SR_COOLDOWN=3 };
 
-struct SrState
+struct 			SrState
 {
   // Score
   double score      = 0.0;  // instantané
@@ -88,21 +88,21 @@ struct SrState
   void reset_all() { reset_soft(); phase=SR_IDLE; tLast=tTriggered=tArmed=0; nTriggers=0; }
 };
 
-inline double sr_clamp(double x,double lo,double hi){ if(x<lo) return lo; if(x>hi) return hi; return x; }
-inline double sr_ema(double prev,double x,double aPct){ const double a = aPct>0.0? aPct/100.0 : 0.0; return prev + a*(x - prev); }
+inline double 	sr_clamp			(double x,double lo,double hi)		{ if(x<lo) return lo; if(x>hi) return hi; return x; }
+inline double 	sr_ema				(double prev,double x,double aPct)	{ const double a = aPct>0.0? aPct/100.0 : 0.0; return prev + a*(x - prev); }
 
 // Calcul du score composite instantané
-inline double sr_score_instant(const SrParams& p, double ofi,double sweep,double vacuum,double imbalance,double absDelta)
+inline double 	sr_score_instant	(const SrParams& p, double ofi,double sweep,double vacuum,double imbalance,double absDelta)
 {
   return p.wOFI*ofi + p.wSweep*sweep + p.wVacuum*vacuum + p.wImbalance*imbalance + p.wAbsDelta*absDelta;
 }
 
-inline bool sr_gates_ok(const SrParams& p, int microOK, int paceOK)
-{ return (p.requireMicroOK? microOK!=0 : true) && (p.requirePaceOK? paceOK!=0 : true); }
+inline bool 	sr_gates_ok			(const SrParams& p, int microOK, int paceOK){
+	return (p.requireMicroOK? microOK!=0 : true) && (p.requirePaceOK? paceOK!=0 : true); }
 
 // Mise à jour par tick. nowMs monotone.
 // Retourne true si trigger sur CE tick. outDir reçoit {+1,-1}.
-inline bool sr_update_tick(SrState& st, const SrParams& p,
+inline bool 	sr_update_tick		(SrState& st, const SrParams& p,
                            long long nowMs,
                            double ofi,double sweep,double vacuum,double imbalance,
                            double absDeltaFromBvc,
@@ -148,7 +148,7 @@ inline bool sr_update_tick(SrState& st, const SrParams& p,
 // 7 consecOver, 8 consecUnder, 9 dt_since_arm_ms, 10 dt_since_trig_ms,
 // 11 n_triggers, 12 thrOn, 13 thrOff, 14 refractory_ms, 15 cooldown_ms
 // -----------------------------------------------------------------------------
-inline int sr_features_v1(const SrState& st, const SrParams& p, long long nowMs, double* out)
+inline int 		sr_features_v1		(const SrState& st, const SrParams& p, long long nowMs, double* out)
 {
   if(!out) return 0; const long long dtArm = (st.tArmed>0? nowMs - st.tArmed : 0); const long long dtTrig = (st.tTriggered>0? nowMs - st.tTriggered : 0);
   out[0]=du::sanitize(st.score);
