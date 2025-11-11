@@ -1,19 +1,13 @@
 // ============================================================================
-// Pack v0 — Engines (v0) — Tape & Advanced
+// Pack v0 — Engines v0 (lot complémentaire #10)
 // ============================================================================
 #include "sierrachart.h"
 #include "Pack_v0.h"
 
-
 SCSFExport scsf_FILLPROB_ENGINE_v0(SCStudyInterfaceRef sc)
 {
-  int& inited = sc.GetPersistentInt(1);
-
-  if (sc.SetDefaults)
-  {
-    sc.GraphName = "FILLPROB_ENGINE_v0";
-    sc.AutoLoop = 0; sc.UpdateAlways = 0; sc.GraphRegion = 0; sc.ValueFormat = 26; sc.FreeDLL = 0;
-
+  if(sc.SetDefaults){
+    sc.GraphName="FILLPROB_ENGINE_v0"; sc.AutoLoop=0; sc.UpdateAlways=1; sc.GraphRegion=0; sc.ValueFormat=26; sc.UsesMarketDepthData=1; sc.FreeDLL=0;
     sc.Subgraph[1].Name = "SG01";
     sc.Subgraph[1].DrawStyle = DRAWSTYLE_IGNORE;
     sc.Subgraph[1].DrawZeros = false;
@@ -38,44 +32,14 @@ SCSFExport scsf_FILLPROB_ENGINE_v0(SCStudyInterfaceRef sc)
     sc.Subgraph[6].DrawStyle = DRAWSTYLE_IGNORE;
     sc.Subgraph[6].DrawZeros = false;
     sc.Subgraph[6].DisplayAsMainPriceGraphValue = 0;
-    sc.Subgraph[7].Name = "SG07";
-    sc.Subgraph[7].DrawStyle = DRAWSTYLE_IGNORE;
-    sc.Subgraph[7].DrawZeros = false;
-    sc.Subgraph[7].DisplayAsMainPriceGraphValue = 0;
-    sc.Subgraph[8].Name = "SG08";
-    sc.Subgraph[8].DrawStyle = DRAWSTYLE_IGNORE;
-    sc.Subgraph[8].DrawZeros = false;
-    sc.Subgraph[8].DisplayAsMainPriceGraphValue = 0;
-
-    sc.Input[0].Name = "01. Lookback ATR";
-    sc.Input[0].SetInt(14); sc.Input[0].SetIntLimits(1, 10000);
-
+    sc.Input[0].Name="01. Niveaux near"; sc.Input[0].SetInt(8);
+    sc.Input[1].Name="02. Lambda distance"; sc.Input[1].SetFloat(6.0f);
     sc.DrawZeros=false; return;
   }
-
-  if (!inited || sc.IsFullRecalculation) { inited=1; }
-  if (sc.ArraySize < 2) return;
-
-  int N = sc.Input[0].GetInt();
-  int idx = sc.ArraySize-1;
-
-  // Gap d'ouverture approximé: Open[idx] - Close[idx-1]
-  double gap = sc.Open[idx] - sc.Close[idx-1];
-
-  // ATR simple N
-  int start = sc.ArraySize - N; if (start < 1) start = 1;
-  double trSum=0.0;
-  for(int k=start; k<=idx; ++k)
-  {
-    double tr = fmax(sc.High[k]-sc.Low[k], fmax(fabs(sc.High[k]-sc.Close[k-1]), fabs(sc.Low[k]-sc.Close[k-1])));
-    trSum += tr;
-  }
-  double atr = (idx-start+1>0? trSum/(idx-start+1) : 0.0);
-
-  // Proba simple: exp(-|gap|/atr) bornée [0,1]
-  double p = 0.0;
-  if (atr>0) { double r = fabs(gap)/atr; p = exp(-r); }
-  sc.Subgraph[1][idx] = p;      // probabilité de comblement
-  sc.Subgraph[2][idx] = gap;    // taille du gap
-  sc.Subgraph[3][idx] = atr;    // ATR
+  int N=sc.Input[0].GetInt(); double lam=sc.Input[1].GetFloat(); if(lam<=0) lam=6.0;
+  s_MarketDepthEntry md{}; double qb=0, qa=0;
+  for(int i=0;i<sc.GetBidMarketDepthNumberOfLevels() && i<N; ++i){ sc.GetBidMarketDepthEntryAtLevel(md,i); qb += md.Quantity*exp(-(i)/(lam)); }
+  for(int i=0;i<sc.GetAskMarketDepthNumberOfLevels() && i<N; ++i){ sc.GetAskMarketDepthEntryAtLevel(md,i); qa += md.Quantity*exp(-(i)/(lam)); }
+  double pBuy = (qa+qb>0? qa/(qa+qb):0.5);
+  sc.Subgraph[1][sc.ArraySize-1]=pBuy;
 }

@@ -29,22 +29,22 @@ namespace du {
 // ---------------------------------------------------------------------------
 // Compat v0
 // ---------------------------------------------------------------------------
-struct ReloadZone { float price=0.0f; float size=0.0f; int ttl=0; }; // ttl en barres
+struct 			ReloadZone 				{ float price=0.0f; float size=0.0f; int ttl=0; }; // ttl en barres
 
-inline void  rzDecay(ReloadZone& z)                 { if (z.ttl>0) --z.ttl; }
-inline bool  rzAlive(const ReloadZone& z)           { return z.ttl>0; }
-inline float rzDistance(const ReloadZone& z, float price) { return (float)std::fabs(price - z.price); }
+inline void  	rzDecay					(ReloadZone& z)                 { if (z.ttl>0) --z.ttl; }
+inline bool  	rzAlive					(const ReloadZone& z)           { return z.ttl>0; }
+inline float 	rzDistance				(const ReloadZone& z, float price) { return (float)std::fabs(price - z.price); }
 
-inline du::Zone rzFromSwing(double hi,double lo,int /*depthTicks*/)
-{ du::Zone Z{lo,hi, /*type*/0, /*strength*/1.0}; du::znNormalize(Z); return Z; }
+inline 			du::Zone rzFromSwing	(double hi,double lo,int /*depthTicks*/){
+	du::Zone Z{lo,hi, /*type*/0, /*strength*/1.0}; du::znNormalize(Z); return Z; }
 
-inline int rzState(double price,const du::Zone& z)
-{ if (price < z.lo) return -1; if (price > z.hi) return +1; return 0; }
+inline int 		rzState					(double price,const du::Zone& z){
+	if (price < z.lo) return -1; if (price > z.hi) return +1; return 0; }
 
 // ---------------------------------------------------------------------------
 // v1 — enrichi
 // ---------------------------------------------------------------------------
-struct RzParams
+struct 			RzParams
 {
   double tickSize        = 0.0;   // pour halfWidth en ticks
   int    halfWidthTicks  = 2;     // demi‑largeur de zone autour du prix ancre
@@ -55,9 +55,9 @@ struct RzParams
   int    ttlBars         = 30;    // TTL bar‑based après dernier event
 };
 
-enum RzState : int { RZ_IDLE=0, RZ_ARMED=1, RZ_ACTIVE=2, RZ_EXHAUST=3 };
+enum 			RzState : int 			{ RZ_IDLE=0, RZ_ARMED=1, RZ_ACTIVE=2, RZ_EXHAUST=3 };
 
-struct RzRuntime
+struct 			RzRuntime
 {
   // Définition de la zone
   double anchorPrice = 0.0;   // prix central 
@@ -87,7 +87,7 @@ struct RzRuntime
 };
 
 // Recalcule la zone autour de anchorPrice
-inline void rz_rebuild_zone(const RzParams& p, RzRuntime& rt)
+inline void 	rz_rebuild_zone			(const RzParams& p, RzRuntime& rt)
 {
   const double hw = (p.tickSize>0.0? p.halfWidthTicks * p.tickSize : 0.0);
   const double ap = rt.anchorPrice > 0.0 ? rt.anchorPrice : 0.0;
@@ -96,7 +96,7 @@ inline void rz_rebuild_zone(const RzParams& p, RzRuntime& rt)
 }
 
 // Armement d’une zone autour d’un prix d’ancrage initial
-inline void rz_arm(RzRuntime& rt, const RzParams& p, double anchorPrice, double nowMs)
+inline void 	rz_arm					(RzRuntime& rt, const RzParams& p, double anchorPrice, double nowMs)
 {
   rt.anchorPrice = anchorPrice; rt.firstSeenMs = nowMs; rt.lastSeenMs = nowMs; rt.peakSize = 0.0; rt.curSize = 0.0;
   rt.state = RZ_ARMED; rt.ttl = p.ttlBars; rz_rebuild_zone(p, rt);
@@ -104,7 +104,7 @@ inline void rz_arm(RzRuntime& rt, const RzParams& p, double anchorPrice, double 
 
 // Mise à jour à partir d’une observation de taille (ex: DOM agrégé à anchorPrice)
 // sizeObs = taille visible actuelle au meilleur niveau inclus dans la zone.
-inline void rz_update_size(RzRuntime& rt, const RzParams& p, double price, double sizeObs, double nowMs)
+inline void 	rz_update_size			(RzRuntime& rt, const RzParams& p, double price, double sizeObs, double nowMs)
 {
   // TTL bar‑based reprendra via rz_on_new_bar()
   if (rt.state == RZ_IDLE && sizeObs > 0.0) { rz_arm(rt, p, price, nowMs); }
@@ -160,13 +160,13 @@ inline void rz_update_size(RzRuntime& rt, const RzParams& p, double price, doubl
 }
 
 // À appeler à chaque nouvelle barre pour gérer le TTL
-inline void rz_on_new_bar(RzRuntime& rt, const RzParams& p)
+inline void 	rz_on_new_bar			(RzRuntime& rt, const RzParams& p)
 {
   if (rt.state == RZ_IDLE) return; if (rt.ttl>0) rt.ttl -= 1; if (rt.ttl<=0) rt.reset_soft();
 }
 
 // Fusion de deux zones proches si centres à moins de mergeTicks
-inline bool rz_merge_if_close(RzRuntime& a, RzRuntime& b, const RzParams& p, int mergeTicks)
+inline bool 	rz_merge_if_close		(RzRuntime& a, RzRuntime& b, const RzParams& p, int mergeTicks)
 {
   if (a.state==RZ_IDLE || b.state==RZ_IDLE) return false;
   const double d = (p.tickSize>0.0? std::fabs(a.anchorPrice-b.anchorPrice)/p.tickSize : std::fabs(a.anchorPrice-b.anchorPrice));
@@ -188,7 +188,7 @@ inline bool rz_merge_if_close(RzRuntime& a, RzRuntime& b, const RzParams& p, int
 // 9: replenished_sum, 10: n_cycles, 11: dist_ticks_to_anchor,
 // 12: inside_flag{0,1}, 13: rel_cur_over_peak (0..1)
 // ---------------------------------------------------------------------------
-inline int rz_features_v1(const RzRuntime& rt, const RzParams& p, double price, double* out)
+inline int 		rz_features_v1			(const RzRuntime& rt, const RzParams& p, double price, double* out)
 {
   if (!out) return 0;
   const double distTicks = (p.tickSize>0.0? (price - rt.anchorPrice)/p.tickSize : (price - rt.anchorPrice));

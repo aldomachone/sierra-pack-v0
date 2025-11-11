@@ -18,9 +18,9 @@ namespace du {
 // ---------------------------------------------------------------------------
 // Compat v0
 // ---------------------------------------------------------------------------
-struct 			PivotsClassic { float P=0, R1=0, S1=0, R2=0, S2=0, R3=0, S3=0; };
+struct 			PivotsClassic 			{ float P=0, R1=0, S1=0, R2=0, S2=0, R3=0, S3=0; };
 
-inline 			PivotsClassic pvClassic(float H, float L, float C)
+inline 			PivotsClassic pvClassic	(float H, float L, float C)
 {
   PivotsClassic p{}; const float P = (H + L + C) / 3.0f; p.P = P;
   p.R1 = 2*P - L;        p.S1 = 2*P - H;
@@ -29,15 +29,15 @@ inline 			PivotsClassic pvClassic(float H, float L, float C)
   return p;
 }
 
-inline void 	pvCompute(int /*set*/, int /*tf*/, double O,double H,double L,double C, double* out)	{ if(!out) return; out[0] = (H+L+C)/3.0; }
-inline int  	pvState(double price,double level)														{ return price>level? +1 : price<level? -1 : 0; }
+inline void 	pvCompute				(int /*set*/, int /*tf*/, double O,double H,double L,double C, double* out)	{ if(!out) return; out[0] = (H+L+C)/3.0; }
+inline int  	pvState					(double price,double level)														{ return price>level? +1 : price<level? -1 : 0; }
 
 // ---------------------------------------------------------------------------
 // v1 — enrichi
 // ---------------------------------------------------------------------------
 
-enum 			PivotSet : int { PV_CLASSIC=0, PV_FIBO=1, PV_CAMARILLA=2, PV_WOODIE=3, PV_DEMARK=4 };
-enum 			PivotTF  : int { PV_DAILY=0, PV_WEEKLY=1, PV_MONTHLY=2, PV_YEARLY=3 };
+enum 			PivotSet : int 			{ PV_CLASSIC=0, PV_FIBO=1, PV_CAMARILLA=2, PV_WOODIE=3, PV_DEMARK=4 };
+enum 			PivotTF  : int 			{ PV_DAILY=0, PV_WEEKLY=1, PV_MONTHLY=2, PV_YEARLY=3 };
 
 struct PivotOut
 {
@@ -47,12 +47,12 @@ struct PivotOut
 };
 
 // Helpers généraux
-inline int  	pv_cross		(double price,double level)							{ return price<level?0:(price>level?2:1); }
-inline void 	pv_dist_ticks	(double price,double tick,double level,double& d)	{ d = tick>0.0? (price-level)/tick : 0.0; }
-inline double 	mid				(double a,double b){ return 0.5*(a+b); }
+inline int  	pv_cross				(double price,double level)							{ return price<level?0:(price>level?2:1); }
+inline void 	pv_dist_ticks			(double price,double tick,double level,double& d)	{ d = tick>0.0? (price-level)/tick : 0.0; }
+inline double 	mid						(double a,double b){ return 0.5*(a+b); }
 
 // ----------------------- Formules -----------------------
-inline void 	pv_compute_classic(double H,double L,double C,PivotOut& o)
+inline void 	pv_compute_classic		(double H,double L,double C,PivotOut& o)
 {
   const double P = (H+L+C)/3.0; o.L[0]=P;
   o.L[1] = 2*P - L;          o.L[5] = 2*P - H;
@@ -68,7 +68,7 @@ inline void 	pv_compute_fibo(double H,double L,double C,PivotOut& o)
   o.L[5]=P-0.382*R; o.L[6]=P-0.618*R; o.L[7]=P-1.000*R; o.L[8]=P-1.618*R;
 }
 
-inline void 	pv_compute_camarilla(double H,double L,double C,PivotOut& o)
+inline void 	pv_compute_camarilla	(double H,double L,double C,PivotOut& o)
 {
   const double R=H-L; const double k1=1.1; // variante courante
   o.L[0]=C; // centre sur Close
@@ -76,7 +76,7 @@ inline void 	pv_compute_camarilla(double H,double L,double C,PivotOut& o)
   o.L[5]=C - (R*k1)/12.0; o.L[6]=C - (R*k1)/6.0;  o.L[7]=C - (R*k1)/4.0;  o.L[8]=C - (R*k1)/2.0;
 }
 
-inline void 	pv_compute_woodie(double H,double L,double C,double O,PivotOut& o)
+inline void 	pv_compute_woodie		(double H,double L,double C,double O,PivotOut& o)
 {
   const double P=(H+L+2*C)/4.0; o.L[0]=P;
   o.L[1]=2*P - L;          o.L[5]=2*P - H;
@@ -84,7 +84,7 @@ inline void 	pv_compute_woodie(double H,double L,double C,double O,PivotOut& o)
   o.L[3]=H + 2*(P - L);    o.L[7]=L - 2*(H - P);
 }
 
-inline void 	pv_compute_demark(double H,double L,double C,double O,PivotOut& o)
+inline void 	pv_compute_demark		(double H,double L,double C,double O,PivotOut& o)
 {
   // DeMark utilise X dépendant du rapport Close vs Open
   double X = 0.0;
@@ -97,7 +97,7 @@ inline void 	pv_compute_demark(double H,double L,double C,double O,PivotOut& o)
   // Variantes R2/S2 parfois publiées, non standardisées → laissons à 0
 }
 
-inline void 	pv_compute(PivotSet set,double O,double H,double L,double C,PivotOut& o)
+inline void 	pv_compute				(PivotSet set,double O,double H,double L,double C,PivotOut& o)
 {
   switch(set){
     case PV_CLASSIC:  pv_compute_classic(H,L,C,o); break;
@@ -113,7 +113,7 @@ inline void 	pv_compute(PivotSet set,double O,double H,double L,double C,PivotOu
 // Ordre : P, R1..R4, S1..S4, distP, crossP, bandWidth(H-L), mid(H,L), span
 // span = (max(abs(Rk-P), abs(Sk-P)))
 // ---------------------------------------------------------------------------
-inline int 		pv_features_v1	(const PivotOut& po, double price, double tick, double H, double L, double* out)
+inline int 		pv_features_v1			(const PivotOut& po, double price, double tick, double H, double L, double* out)
 {
   if(!out) return 0;
   const double P = po.L[0];

@@ -22,7 +22,7 @@ inline COLORREF DU_COL_TXT()  { return RGB(255,255,255);} // blanc
 // -----------------------------------------------------------------------------
 // Base: configuration d'un subgraph « marker » prêt pour l'overlay
 // -----------------------------------------------------------------------------
-inline void ovMarkerSetup(SCSubgraphRef sg, const char* name, int sizePx,
+inline void 	ovMarkerSetup(SCSubgraphRef sg, const char* name, int sizePx,
                           COLORREF colMain = DU_COL_UP(), COLORREF colAlt = DU_COL_DN())
 {
   sg.Name = name ? name : "Marker";
@@ -37,13 +37,13 @@ inline void ovMarkerSetup(SCSubgraphRef sg, const char* name, int sizePx,
 }
 
 // Variante historique (compat v0) conservée
-inline void markerTransparent(SCSubgraphRef sg, int size)
-{ ovMarkerSetup(sg, sg.Name.GetChars(), size, DU_COL_UP(), DU_COL_DN()); }
+inline void 	markerTransparent(SCSubgraphRef sg, int size){
+	ovMarkerSetup(sg, sg.Name.GetChars(), size, DU_COL_UP(), DU_COL_DN()); }
 
 // -----------------------------------------------------------------------------
 // Politique d'impact à l'échelle pour l'ensemble des SG de l'étude
 // -----------------------------------------------------------------------------
-inline void ovDisableScaleImpactAll(SCStudyInterfaceRef sc)
+inline void 	ovDisableScaleImpactAll(SCStudyInterfaceRef sc)
 {
   for (int i=0; i<SC_SUBGRAPH_MAX; ++i){
     sc.Subgraph[i].DrawZeros = 0;
@@ -55,7 +55,7 @@ inline void ovDisableScaleImpactAll(SCStudyInterfaceRef sc)
 // Last‑bar‑only: affiche le marqueur uniquement sur la dernière barre
 //  • Utilise un persistent pour effacer la précédente position
 // -----------------------------------------------------------------------------
-inline void ovSetMarkerLastBarOnly(SCStudyInterfaceRef sc, SCSubgraphRef sg,
+inline void 	ovSetMarkerLastBarOnly(SCStudyInterfaceRef sc, SCSubgraphRef sg,
                                    double price, int persistentLastBarId, float sizePx = 0.0f)
 {
   const int last = sc.ArraySize - 1; if (last < 0) return;
@@ -68,7 +68,7 @@ inline void ovSetMarkerLastBarOnly(SCStudyInterfaceRef sc, SCSubgraphRef sg,
 }
 
 // Efface le marqueur de la barre persistante mémorisée
-inline void ovClearLastMarker(SCStudyInterfaceRef sc, SCSubgraphRef sg, int persistentLastBarId)
+inline void 	ovClearLastMarker(SCStudyInterfaceRef sc, SCSubgraphRef sg, int persistentLastBarId)
 {
   int& prev = sc.GetPersistentInt(persistentLastBarId);
   if (prev >= 0 && prev < sc.ArraySize) sg[prev] = 0.0f;
@@ -78,7 +78,7 @@ inline void ovClearLastMarker(SCStudyInterfaceRef sc, SCSubgraphRef sg, int pers
 // -----------------------------------------------------------------------------
 // Placement au meilleur Bid/Ask ou au Close, avec offset en ticks
 // -----------------------------------------------------------------------------
-inline double ovPickPrice(SCStudyInterfaceRef sc, int mode /*0=Close,1=BestBid,2=BestAsk*/, int offsetTicks = 0)
+inline double 	ovPickPrice(SCStudyInterfaceRef sc, int mode /*0=Close,1=BestBid,2=BestAsk*/, int offsetTicks = 0)
 {
   const int i = sc.ArraySize - 1; if (i < 0) return 0.0;
   double p = (double)sc.Close[i];
@@ -89,7 +89,7 @@ inline double ovPickPrice(SCStudyInterfaceRef sc, int mode /*0=Close,1=BestBid,2
 }
 
 // Place un marqueur « up » ou « dn » selon le signe d'un score
-inline void ovMarkBySign(SCStudyInterfaceRef sc, SCSubgraphRef sg, double score,
+inline void 	ovMarkBySign(SCStudyInterfaceRef sc, SCSubgraphRef sg, double score,
                          int priceMode /*0/1/2*/, int persistentLastBarId,
                          int offsetTicks = 0, float sizePx = 0.0f)
 {
@@ -108,7 +108,7 @@ inline void ovMarkBySign(SCStudyInterfaceRef sc, SCSubgraphRef sg, double score,
 // -----------------------------------------------------------------------------
 // Labels « dernière barre » uniquement sur un SG texte/valeur
 // -----------------------------------------------------------------------------
-inline void lastBarOnlyNameValue(SCSubgraphRef sg, bool on)
+inline void 	lastBarOnlyNameValue(SCSubgraphRef sg, bool on)
 {
   sg.DrawStyle = on ? DRAWSTYLE_SUBGRAPH_NAME_AND_VALUE_LABELS_ONLY : DRAWSTYLE_IGNORE;
   sg.DrawZeros = 0;
@@ -117,17 +117,17 @@ inline void lastBarOnlyNameValue(SCSubgraphRef sg, bool on)
 // -----------------------------------------------------------------------------
 // Dessiner « sous » le prix pour éviter l'occlusion
 // -----------------------------------------------------------------------------
-inline void ovDrawUnderMain(SCStudyInterfaceRef sc, bool yes)
-{ sc.DrawStudyUnderneathMainPriceGraph = yes ? 1 : 0; }
+inline void 	ovDrawUnderMain(SCStudyInterfaceRef sc, bool yes){
+	sc.DrawStudyUnderneathMainPriceGraph = yes ? 1 : 0; }
 
 // -----------------------------------------------------------------------------
 // Raccourcis « legacy » pour compatibilité ascendante v0
 // -----------------------------------------------------------------------------
-inline void ovSetMarker(SCStudyInterfaceRef sc, SCSubgraphRef sg, int idx, double y, float size)
-{ sg[idx] = (float)y; sg.DataColor[idx] = DU_COL_TXT(); sg.DrawStyle = DRAWSTYLE_TRANSPARENT_CIRCLE_VARIABLE_SIZE; sg.LineWidth = size; }
+inline void 	ovSetMarker(SCStudyInterfaceRef sc, SCSubgraphRef sg, int idx, double y, float size){
+	sg[idx] = (float)y; sg.DataColor[idx] = DU_COL_TXT(); sg.DrawStyle = DRAWSTYLE_TRANSPARENT_CIRCLE_VARIABLE_SIZE; sg.LineWidth = size; }
 
-inline void ovLastBarOnly(SCStudyInterfaceRef, SCSubgraphRef, bool /*visible*/){ /* obsolète: remplacé par ovSetMarkerLastBarOnly */ }
-inline void ovZeroDoesNotMoveScale(SCStudyInterfaceRef, SCSubgraphRef){ /* obsolète: géré via DrawZeros=0 */ }
-inline void ovRightAlignLabels(SCStudyInterfaceRef, const char* /*sgName*/, bool /*showValue*/){ /* placeholder: alignement UI côté plateforme */ }
+inline void 	ovLastBarOnly(SCStudyInterfaceRef, SCSubgraphRef, bool /*visible*/){ /* obsolète: remplacé par ovSetMarkerLastBarOnly */ }
+inline void 	ovZeroDoesNotMoveScale(SCStudyInterfaceRef, SCSubgraphRef){ /* obsolète: géré via DrawZeros=0 */ }
+inline void 	ovRightAlignLabels(SCStudyInterfaceRef, const char* /*sgName*/, bool /*showValue*/){ /* placeholder: alignement UI côté plateforme */ }
 
 } // namespace du

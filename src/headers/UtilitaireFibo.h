@@ -21,10 +21,10 @@ namespace du {
 // ---------------------------------------------------------------------------
 // Compat v0
 // ---------------------------------------------------------------------------
-struct FiboSet { float lv236=0, lv382=0, lv500=0, lv618=0, lv786=0; };
+struct 			FiboSet 					{ float lv236=0, lv382=0, lv500=0, lv618=0, lv786=0; };
 
 // Retracements entre swingHi et swingLo (up si hi>=lo) — compat v0
-inline FiboSet fbRetrace(float swingHi, float swingLo)
+inline 			FiboSet fbRetrace	(float swingHi, float swingLo)
 {
   FiboSet f{};
   const bool up = swingHi >= swingLo;
@@ -39,10 +39,10 @@ inline FiboSet fbRetrace(float swingHi, float swingLo)
   return f;
 }
 
-inline void fbLevels(double hi,double lo,double* out)
-{ if(!out) return; const double r = hi-lo; out[0]=hi; out[1]=hi-0.618*r; out[2]=lo; }
+inline void 	fbLevels					(double hi,double lo,double* out){
+	if(!out) return; const double r = hi-lo; out[0]=hi; out[1]=hi-0.618*r; out[2]=lo; }
 
-inline void fbSnap(double price,const double* lv,int n,int& idx,double& dist)
+inline void 	fbSnap						(double price,const double* lv,int n,int& idx,double& dist)
 {
   idx=-1; dist=0.0; if(!lv||n<=0){return;} double best=1e300; int bi=-1;
   for(int i=0;i<n;++i){ const double d = std::fabs(price-lv[i]); if(d<best){best=d; bi=i;} }
@@ -52,7 +52,7 @@ inline void fbSnap(double price,const double* lv,int n,int& idx,double& dist)
 // ---------------------------------------------------------------------------
 // Enrichi v1 — structures et helpers
 // ---------------------------------------------------------------------------
-struct FiboFull
+struct 			FiboFull
 {
   // Retracements standard (top→bottom pour Up; bottom→top pour Down)
   double r236=0, r382=0, r500=0, r618=0, r786=0;
@@ -60,16 +60,16 @@ struct FiboFull
   double x1272=0, x1382=0, x1618=0, x2000=0, x2618=0;
 };
 
-inline int fbTrendFromSwings(double hi,double lo)
-{ return (hi>=lo)? +1 : -1; }
+inline int 		fbTrendFromSwings			(double hi,double lo){
+	return (hi>=lo)? +1 : -1; }
 
-inline double fbRange(double hi,double lo) { return hi-lo; }
-inline double fbMid(double hi,double lo)   { return 0.5*(hi+lo); }
-inline double fbPos01(double price,double hi,double lo)
-{ const double w=hi-lo; if(w<=0) return 0.5; const double x=(price-lo)/w; return x<0?0:(x>1?1:x); }
+inline double 	fbRange						(double hi,double lo) { return hi-lo; }
+inline double 	fbMid						(double hi,double lo)   { return 0.5*(hi+lo); }
+inline double 	fbPos01						(double price,double hi,double lo){
+	const double w=hi-lo; if(w<=0) return 0.5; const double x=(price-lo)/w; return x<0?0:(x>1?1:x); }
 
 // Retracements + extensions, Up si hi>=lo, sinon Down automatiquement
-inline FiboFull fbComputeFull(double hi,double lo)
+inline 			FiboFull fbComputeFull		(double hi,double lo)
 {
   FiboFull F{}; const bool up = (hi>=lo); const double a = up? hi:lo; const double b = up? lo:hi; const double d=a-b;
   // retracements entre a et b
@@ -85,7 +85,7 @@ inline FiboFull fbComputeFull(double hi,double lo)
 }
 
 // Packing des niveaux dans un buffer (ordre retracements puis extensions)
-inline int fbPackLevels(const FiboFull& F, double* out, int maxOut)
+inline int 		fbPackLevels				(const FiboFull& F, double* out, int maxOut)
 {
   if(!out||maxOut<=0) return 0; int k=0;
   auto PUT=[&](double v){ if(k<maxOut) out[k++]=v; };
@@ -95,7 +95,7 @@ inline int fbPackLevels(const FiboFull& F, double* out, int maxOut)
 }
 
 // Nearest avec conversion optionnelle en ticks
-inline int fbNearest(double price,const double* lv,int n,double tickSize,int& idx,double& distTicks)
+inline int 		fbNearest					(double price,const double* lv,int n,double tickSize,int& idx,double& distTicks)
 {
   idx=-1; distTicks=0.0; if(!lv||n<=0) return -1; double best=1e300; int bi=-1;
   for(int i=0;i<n;++i){ const double d=std::fabs(price-lv[i]); if(d<best){best=d; bi=i;} }
@@ -103,7 +103,7 @@ inline int fbNearest(double price,const double* lv,int n,double tickSize,int& id
 }
 
 // Séries bar‑based minimales: récupère hi/lo d’un intervalle et renvoie FiboFull
-inline FiboFull fbFromSeries_HiLo(const SCStudyInterfaceRef& sc, int first, int last)
+inline 			FiboFull fbFromSeries_HiLo	(const SCStudyInterfaceRef& sc, int first, int last)
 {
   if(first<0) first=0; if(last<first) last=first; double hi=sc.High[first], lo=sc.Low[first];
   for(int i=first;i<=last;++i){ if(sc.High[i]>hi) hi=sc.High[i]; if(sc.Low[i]<lo) lo=sc.Low[i]; }
@@ -116,7 +116,7 @@ inline FiboFull fbFromSeries_HiLo(const SCStudyInterfaceRef& sc, int first, int 
 // 5: pos01 (prix vs swing), 6: nearest_idx, 7: dist_ticks_nearest,
 // 8: r618, 9: r382, 10: r786, 11: x1272, 12: x1618, 13: x2000
 // ---------------------------------------------------------------------------
-inline int fb_features_v1(double price,double hi,double lo,double tickSize,const FiboFull& F,double* out)
+inline int 		fb_features_v1				(double price,double hi,double lo,double tickSize,const FiboFull& F,double* out)
 {
   if(!out) return 0; const int trend = fbTrendFromSwings(hi,lo); double lv[10]; const int n=fbPackLevels(F,lv,10);
   int idx=-1; double distT=0.0; fbNearest(price, lv, n, tickSize, idx, distT);

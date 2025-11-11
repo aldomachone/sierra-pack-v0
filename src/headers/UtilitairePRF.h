@@ -31,7 +31,7 @@ namespace du {
 // -----------------------------------------------------------------------------
 // ===== Compat v0 (inchangée, mais sécurisée) =================================
 // -----------------------------------------------------------------------------
-inline float prfAlphaFromHalfLifeSec(float halfLifeSec, float dtSec)
+inline float 		prfAlphaFromHalfLifeSec			(float halfLifeSec, float dtSec)
 {
   if (!(halfLifeSec>0.0f)) halfLifeSec = 0.1f;
   if (!(dtSec      >0.0f)) dtSec       = 0.01f;
@@ -39,26 +39,26 @@ inline float prfAlphaFromHalfLifeSec(float halfLifeSec, float dtSec)
   return a;
 }
 
-inline float prfEmaHL(float x, float prev, float halfLifeSec, float dtSec)
-{ const float a = prfAlphaFromHalfLifeSec(halfLifeSec, dtSec); return a*x + (1.0f - a)*prev; }
+inline float 		prfEmaHL						(float x, float prev, float halfLifeSec, float dtSec){
+	const float a = prfAlphaFromHalfLifeSec(halfLifeSec, dtSec); return a*x + (1.0f - a)*prev; }
 
-inline double prfResponse(long long dtMs, long long halfLifeMs)
-{ if (halfLifeMs<=0) return 0.0; return 1.0 - std::exp(-std::log(2.0) * (double)dtMs / (double)halfLifeMs); }
+inline double 		prfResponse						(long long dtMs, long long halfLifeMs){
+	if (halfLifeMs<=0) return 0.0; return 1.0 - std::exp(-std::log(2.0) * (double)dtMs / (double)halfLifeMs); }
 
 // Pente simple : régression sur indices 0..n-1
-inline double prfSlope(const double* series, int n)
+inline double 		prfSlope						(const double* series, int n)
 {
   if(!series || n<=1) return 0.0; double sx=0, sy=0, sxx=0, sxy=0; for(int i=0;i<n;++i){ const double x=(double)i, y=series[i]; sx+=x; sy+=y; sxx+=x*x; sxy+=x*y; }
   const double den = n*sxx - sx*sx; if (std::fabs(den) < 1e-12) return 0.0; return (n*sxy - sx*sy) / den;
 }
 
-inline long long prfHalfLife(double targetPct, long long dtMs)
-{ if(!(targetPct>0.0) || !(targetPct<1.0) || dtMs<=0) return 0; return (long long)(- (double)dtMs * std::log(1.0 - targetPct) / std::log(2.0)); }
+inline long long 	prfHalfLife						(double targetPct, long long dtMs){
+	if(!(targetPct>0.0) || !(targetPct<1.0) || dtMs<=0) return 0; return (long long)(- (double)dtMs * std::log(1.0 - targetPct) / std::log(2.0)); }
 
 // -----------------------------------------------------------------------------
 // ===== v1 — paramètres, état et utilitaires =================================
 // -----------------------------------------------------------------------------
-struct PrfParams
+struct 				PrfParams
 {
   double hl_ms      = 250.0;   // demi‑vie en millisecondes
   double dt_ms      = 50.0;    // pas nominal entre updates
@@ -68,9 +68,9 @@ struct PrfParams
   int    cooldownMs = 250;     // délai post‑événement
 };
 
-enum PrfPhase:int { PRF_IDLE=0, PRF_ARMED=1, PRF_TRIGGERED=2, PRF_COOLDOWN=3 };
+enum 				PrfPhase:int { PRF_IDLE=0, PRF_ARMED=1, PRF_TRIGGERED=2, PRF_COOLDOWN=3 };
 
-struct PrfState
+struct 				PrfState
 {
   // Niveau, vitesse, accélération
   double y=0.0, yPrev=0.0, v=0.0, a=0.0;
@@ -89,11 +89,11 @@ struct PrfState
 };
 
 // alpha EMA à partir d'une demi‑vie en ms et d'un pas dt en ms
-inline double prf_alpha_from_hl_ms(double hl_ms, double dt_ms){
+inline double 		prf_alpha_from_hl_ms			(double hl_ms, double dt_ms){
 	if(!(hl_ms>0.0)) hl_ms=1.0; if(!(dt_ms>0.0)) dt_ms=1.0; return 1.0 - std::exp(-(std::log(2.0)) * dt_ms / hl_ms); }
 
 // Pas de filtre EMA 1er ordre
-inline double 	prf_step(double x, PrfState& st, const PrfParams& p)
+inline double 		prf_step						(double x, PrfState& st, const PrfParams& p)
 {
   const double a = prf_alpha_from_hl_ms(p.hl_ms, p.dt_ms);
   st.yPrev = st.y; st.y = a*x + (1.0 - a)*st.yPrev; st.v = st.y - st.yPrev; st.a = st.v - (st.yPrev - (st.yPrev - st.v));
@@ -111,14 +111,14 @@ inline double 	prf_step(double x, PrfState& st, const PrfParams& p)
 
 // Estimation HL sur décroissance exponentielle : y(t) = y0 * 2^{-t/HL}
 // À partir de deux amplitudes y1,y2 espacées de dt cumulés (ms)
-inline double 	prf_estimate_hl_ms_from_pair(double y1, double y2, double dt_ms)
+inline double 		prf_estimate_hl_ms_from_pair	(double y1, double y2, double dt_ms)
 {
   const double a1 = std::fabs(y1), a2 = std::fabs(y2); if(!(a1>1e-12) || !(a2>1e-12) || !(dt_ms>0.0)) return 0.0;
   const double r  = a1 / a2; if(!(r>1.0)) return 0.0; return dt_ms / (std::log2(r));
 }
 
 // Hystérésis + réfractaire + cooldown sur yNormEma
-inline bool 	prf_hysteresis_step(PrfState& st, const PrfParams& p, long long nowMs)
+inline bool 		prf_hysteresis_step				(PrfState& st, const PrfParams& p, long long nowMs)
 {
   if (st.phase == PRF_COOLDOWN) { if (nowMs - st.tTrig >= p.cooldownMs) st.phase = PRF_IDLE; else return false; }
   const double x = std::fabs(st.yNormEma);
@@ -130,7 +130,7 @@ inline bool 	prf_hysteresis_step(PrfState& st, const PrfParams& p, long long now
 }
 
 // Boucle utilitaire complète: applique l'entrée x, met à jour phase, retourne true si trigger
-inline bool 	prf_update_tick(double x, PrfState& st, const PrfParams& p, long long nowMs){
+inline bool 		prf_update_tick					(double x, PrfState& st, const PrfParams& p, long long nowMs){
 	st.tLast = nowMs; prf_step(x, st, p); return prf_hysteresis_step(st, p, nowMs); }
 
 // -----------------------------------------------------------------------------
@@ -139,7 +139,7 @@ inline bool 	prf_update_tick(double x, PrfState& st, const PrfParams& p, long lo
 // 8 consecUnder, 9 dt_since_trig_ms, 10 slopeY, 11 hlEstMs, 12 alpha, 13 dt_ms,
 // 14 hl_ms_cfg, 15 y_abs
 // -----------------------------------------------------------------------------
-inline int 		prf_features_v1(const PrfState& st, const PrfParams& p, long long nowMs, double* out)
+inline int 			prf_features_v1					(const PrfState& st, const PrfParams& p, long long nowMs, double* out)
 {
   if(!out) return 0; const long long dtT = (st.tTrig>0? nowMs - st.tTrig : 0);
   out[0]=du::sanitize(st.y); out[1]=du::sanitize(st.v); out[2]=du::sanitize(st.a);

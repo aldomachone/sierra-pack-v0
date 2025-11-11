@@ -29,11 +29,11 @@ namespace du {
 // ---------------------------------------------------------------------------
 // Compat v0
 // ---------------------------------------------------------------------------
-struct Fvg { bool up=false, dn=false; float hi=0, lo=0; };
-struct fvgRec { double lo{0}, hi{0}; };
+struct 			Fvg 				{ bool up=false, dn=false; float hi=0, lo=0; };
+struct 			fvgRec 				{ double lo{0}, hi{0}; };
 
 // FVG 3‑bar (index courant = n). Renvoie un Fvg simple pour la barre n.
-inline Fvg fvgDetect(const SCStudyInterfaceRef& sc, int n)
+inline 			Fvg fvgDetect		(const SCStudyInterfaceRef& sc, int n)
 {
   Fvg f{}; if (n < 2) return f;
   const double Hm2 = sc.High[n-2];
@@ -52,14 +52,14 @@ inline Fvg fvgDetect(const SCStudyInterfaceRef& sc, int n)
 // ---------------------------------------------------------------------------
 // Enrichi v1 — helpers génériques
 // ---------------------------------------------------------------------------
-inline void fvgNormalize(fvgRec& z){ if (z.hi < z.lo) { const double t=z.lo; z.lo=z.hi; z.hi=t; } }
-inline double fvgWidth (const fvgRec& z){ return z.hi - z.lo; }
-inline bool   fvgContains(const fvgRec& z, double p){ return (p >= z.lo && p <= z.hi); }
-inline double fvgSignedDist(const fvgRec& z, double p)
-{ const double c = 0.5*(z.lo+z.hi); if (fvgContains(z,p)) return 0.0; return (p < c) ? (z.lo - p) : (p - z.hi); }
+inline void 	fvgNormalize		(fvgRec& z){ if (z.hi < z.lo) { const double t=z.lo; z.lo=z.hi; z.hi=t; } }
+inline double 	fvgWidth 			(const fvgRec& z){ return z.hi - z.lo; }
+inline bool   	fvgContains			(const fvgRec& z, double p){ return (p >= z.lo && p <= z.hi); }
+inline double 	fvgSignedDist		(const fvgRec& z, double p){
+	const double c = 0.5*(z.lo+z.hi); if (fvgContains(z,p)) return 0.0; return (p < c) ? (z.lo - p) : (p - z.hi); }
 
 // Merge adjacents/chevauchants avec tolérance absolue (prix), sur place.
-inline int fvgMergeAdjacent(fvgRec* zs, int n, double tol)
+inline int 		fvgMergeAdjacent	(fvgRec* zs, int n, double tol)
 {
   if (!zs || n <= 0) return 0; for (int i=0;i<n;++i) fvgNormalize(zs[i]);
   // tri par lo
@@ -75,7 +75,7 @@ inline int fvgMergeAdjacent(fvgRec* zs, int n, double tol)
 // n: nombre de barres. minTicks: largeur mini (en ticks) si tickSize>0 sinon en prix.
 // out: tableau de fvgRec. maxOut: taille max de out[]. Retourne le nb écrit.
 // ---------------------------------------------------------------------------
-inline int fvgDetect(const double* candles, int n, int minTicks, fvgRec* out, int maxOut,
+inline int 		fvgDetect			(const double* candles, int n, int minTicks, fvgRec* out, int maxOut,
                      double tickSize = 0.0)
 {
   if (!candles || !out || n <= 0 || maxOut <= 0) return 0; int k=0;
@@ -99,7 +99,7 @@ inline int fvgDetect(const double* candles, int n, int minTicks, fvgRec* out, in
 
 // Pourcentage de « comblement » par rapport à la zone [lo,hi]
 // price à l’intérieur → 100 %. En dehors → proportion négative à 0.
-inline double fvgFillPct(double price, const fvgRec& z)
+inline double 	fvgFillPct			(double price, const fvgRec& z)
 {
   if (z.hi <= z.lo) return 0.0; if (price <= z.lo) return 0.0; if (price >= z.hi) return 100.0;
   return 100.0 * (price - z.lo) / (z.hi - z.lo);
@@ -109,7 +109,7 @@ inline double fvgFillPct(double price, const fvgRec& z)
 // Scan bar‑based: collecte des FVG sur un intervalle [first..last]
 // Écrit jusqu’à maxOut zones triées et merge avec tolérance tol.
 // ---------------------------------------------------------------------------
-inline int fvg_scan_series(SCStudyInterfaceRef sc, int first, int last, fvgRec* out, int maxOut,
+inline int 		fvg_scan_series		(SCStudyInterfaceRef sc, int first, int last, fvgRec* out, int maxOut,
                            double tickSize = 0.0, int minTicks = 0, double tol = 0.0)
 {
   if (!out || maxOut <= 0) return 0; if (first < 2) first = 2; if (last < first) return 0;
@@ -143,7 +143,7 @@ inline int fvg_scan_series(SCStudyInterfaceRef sc, int first, int last, fvgRec* 
 // 4: total_covered_span, 5: mean_width, 6: max_width, 7: min_width,
 // 8: inside_flag{0,1}, 9: signed_dist_nearest, 10: lo_nearest, 11: hi_nearest
 // ---------------------------------------------------------------------------
-inline int fvg_features_v1(const fvgRec* zs, int n, double price, double* out)
+inline int 		fvg_features_v1		(const fvgRec* zs, int n, double price, double* out)
 {
   if (!out) return 0; for (int i=0;i<12;++i) out[i]=0.0; if (!zs || n<=0) return 12;
   // nearest
