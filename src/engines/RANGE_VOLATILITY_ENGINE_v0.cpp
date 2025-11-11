@@ -4,10 +4,10 @@
 #include "sierrachart.h"
 #include "Pack_v0.h"
 
-SCSFExport scsf_PROFILE_SHIFT_ENGINE_v0(SCStudyInterfaceRef sc)
+SCSFExport scsf_RANGE_VOLATILITY_ENGINE_v0(SCStudyInterfaceRef sc)
 {
   if(sc.SetDefaults){
-    sc.GraphName="PROFILE_SHIFT_ENGINE_v0"; sc.AutoLoop=0; sc.UpdateAlways=0; sc.GraphRegion=0; sc.ValueFormat=26; sc.FreeDLL=0;
+    sc.GraphName="RANGE_VOLATILITY_ENGINE_v0"; sc.AutoLoop=0; sc.UpdateAlways=0; sc.GraphRegion=0; sc.ValueFormat=26; sc.FreeDLL=0;
     sc.Subgraph[1].Name = "SG01";
     sc.Subgraph[1].DrawStyle = DRAWSTYLE_IGNORE;
     sc.Subgraph[1].DrawZeros = false;
@@ -24,11 +24,12 @@ SCSFExport scsf_PROFILE_SHIFT_ENGINE_v0(SCStudyInterfaceRef sc)
     sc.Subgraph[4].DrawStyle = DRAWSTYLE_IGNORE;
     sc.Subgraph[4].DrawZeros = false;
     sc.Subgraph[4].DisplayAsMainPriceGraphValue = 0;
-    sc.Input[0].Name="01. Lookback"; sc.Input[0].SetInt(100);
+    sc.Input[0].Name="01. ATR court"; sc.Input[0].SetInt(7);
+    sc.Input[1].Name="02. ATR long"; sc.Input[1].SetInt(28);
     sc.DrawZeros=false; return;
   }
-  if(sc.ArraySize<=0) return; int idx=sc.ArraySize-1; int lb=sc.Input[0].GetInt(); int s=idx-lb; if(s<0) s=0;
-  double best=-1, poc=sc.Close[s]; for(int i=s;i<=idx;++i){ if(sc.Volume[i]>best){ best=sc.Volume[i]; poc=sc.Close[i]; } }
-  static double prev=0; double shift=poc - prev; prev=poc;
-  sc.Subgraph[1][idx]=shift;
+  if(sc.ArraySize<=1) return; int idx=sc.ArraySize-1;
+  auto atrN = [&](int N){ int s=idx-N; if(s<1) s=1; double tr=0; int c=0; for(int k=s;k<=idx;++k){ tr+=fmax(sc.High[k]-sc.Low[k], fmax(fabs(sc.High[k]-sc.Close[k-1]), fabs(sc.Low[k]-sc.Close[k-1]))); ++c; } return (c>0? tr/c:0.0); };
+  double aS=atrN(sc.Input[0].GetInt()), aL=atrN(sc.Input[1].GetInt());
+  sc.Subgraph[1][idx]=(aL>0? aS/aL:0.0);
 }

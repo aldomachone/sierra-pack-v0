@@ -1,13 +1,14 @@
 // ============================================================================
-// Pack v0 — Engines v0 (lot complémentaire #2)
+// Pack v0 — Engines v0 (lot complémentaire #3)
 // ============================================================================
 #include "sierrachart.h"
 #include "Pack_v0.h"
 
-SCSFExport scsf_PROFILE_SHIFT_ENGINE_v0(SCStudyInterfaceRef sc)
+SCSFExport scsf_TAPE_CUMDELTA_ENGINE_v0(SCStudyInterfaceRef sc)
 {
+  static double cd=0;
   if(sc.SetDefaults){
-    sc.GraphName="PROFILE_SHIFT_ENGINE_v0"; sc.AutoLoop=0; sc.UpdateAlways=0; sc.GraphRegion=0; sc.ValueFormat=26; sc.FreeDLL=0;
+    sc.GraphName="TAPE_CUMDELTA_ENGINE_v0"; sc.AutoLoop=0; sc.UpdateAlways=1; sc.GraphRegion=0; sc.ValueFormat=26; sc.MaintainTimeAndSalesData=1; sc.FreeDLL=0;
     sc.Subgraph[1].Name = "SG01";
     sc.Subgraph[1].DrawStyle = DRAWSTYLE_IGNORE;
     sc.Subgraph[1].DrawZeros = false;
@@ -24,11 +25,12 @@ SCSFExport scsf_PROFILE_SHIFT_ENGINE_v0(SCStudyInterfaceRef sc)
     sc.Subgraph[4].DrawStyle = DRAWSTYLE_IGNORE;
     sc.Subgraph[4].DrawZeros = false;
     sc.Subgraph[4].DisplayAsMainPriceGraphValue = 0;
-    sc.Input[0].Name="01. Lookback"; sc.Input[0].SetInt(100);
+    sc.Input[0].Name="01. Reset quotidien"; sc.Input[0].SetYesNo(0);
     sc.DrawZeros=false; return;
   }
-  if(sc.ArraySize<=0) return; int idx=sc.ArraySize-1; int lb=sc.Input[0].GetInt(); int s=idx-lb; if(s<0) s=0;
-  double best=-1, poc=sc.Close[s]; for(int i=s;i<=idx;++i){ if(sc.Volume[i]>best){ best=sc.Volume[i]; poc=sc.Close[i]; } }
-  static double prev=0; double shift=poc - prev; prev=poc;
-  sc.Subgraph[1][idx]=shift;
+  if(sc.IsFullRecalculation || (sc.Input[0].GetYesNo() && sc.Index==0)) cd=0;
+  c_SCTimeAndSalesArray ts; sc.GetTimeAndSales(ts); if(ts.Size()==0 || sc.ArraySize==0) return;
+  double last=0;
+  for(int i=0;i<ts.Size();++i){ const auto& e=ts[i]; if(e.Type!=SC_TS_TRADES) continue; int d=(last>0? (e.Price>last? +1:(e.Price<last? -1:0)):0); cd += d*e.Volume; last=e.Price; }
+  sc.Subgraph[1][sc.ArraySize-1]=cd;
 }

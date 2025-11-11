@@ -89,11 +89,11 @@ struct PrfState
 };
 
 // alpha EMA à partir d'une demi‑vie en ms et d'un pas dt en ms
-inline double prf_alpha_from_hl_ms(double hl_ms, double dt_ms)
-{ if(!(hl_ms>0.0)) hl_ms=1.0; if(!(dt_ms>0.0)) dt_ms=1.0; return 1.0 - std::exp(-(std::log(2.0)) * dt_ms / hl_ms); }
+inline double prf_alpha_from_hl_ms(double hl_ms, double dt_ms){
+	if(!(hl_ms>0.0)) hl_ms=1.0; if(!(dt_ms>0.0)) dt_ms=1.0; return 1.0 - std::exp(-(std::log(2.0)) * dt_ms / hl_ms); }
 
 // Pas de filtre EMA 1er ordre
-inline double prf_step(double x, PrfState& st, const PrfParams& p)
+inline double 	prf_step(double x, PrfState& st, const PrfParams& p)
 {
   const double a = prf_alpha_from_hl_ms(p.hl_ms, p.dt_ms);
   st.yPrev = st.y; st.y = a*x + (1.0 - a)*st.yPrev; st.v = st.y - st.yPrev; st.a = st.v - (st.yPrev - (st.yPrev - st.v));
@@ -111,14 +111,14 @@ inline double prf_step(double x, PrfState& st, const PrfParams& p)
 
 // Estimation HL sur décroissance exponentielle : y(t) = y0 * 2^{-t/HL}
 // À partir de deux amplitudes y1,y2 espacées de dt cumulés (ms)
-inline double prf_estimate_hl_ms_from_pair(double y1, double y2, double dt_ms)
+inline double 	prf_estimate_hl_ms_from_pair(double y1, double y2, double dt_ms)
 {
   const double a1 = std::fabs(y1), a2 = std::fabs(y2); if(!(a1>1e-12) || !(a2>1e-12) || !(dt_ms>0.0)) return 0.0;
   const double r  = a1 / a2; if(!(r>1.0)) return 0.0; return dt_ms / (std::log2(r));
 }
 
 // Hystérésis + réfractaire + cooldown sur yNormEma
-inline bool prf_hysteresis_step(PrfState& st, const PrfParams& p, long long nowMs)
+inline bool 	prf_hysteresis_step(PrfState& st, const PrfParams& p, long long nowMs)
 {
   if (st.phase == PRF_COOLDOWN) { if (nowMs - st.tTrig >= p.cooldownMs) st.phase = PRF_IDLE; else return false; }
   const double x = std::fabs(st.yNormEma);
@@ -130,8 +130,8 @@ inline bool prf_hysteresis_step(PrfState& st, const PrfParams& p, long long nowM
 }
 
 // Boucle utilitaire complète: applique l'entrée x, met à jour phase, retourne true si trigger
-inline bool prf_update_tick(double x, PrfState& st, const PrfParams& p, long long nowMs)
-{ st.tLast = nowMs; prf_step(x, st, p); return prf_hysteresis_step(st, p, nowMs); }
+inline bool 	prf_update_tick(double x, PrfState& st, const PrfParams& p, long long nowMs){
+	st.tLast = nowMs; prf_step(x, st, p); return prf_hysteresis_step(st, p, nowMs); }
 
 // -----------------------------------------------------------------------------
 // Features MLP v1 — 16 features
@@ -139,7 +139,7 @@ inline bool prf_update_tick(double x, PrfState& st, const PrfParams& p, long lon
 // 8 consecUnder, 9 dt_since_trig_ms, 10 slopeY, 11 hlEstMs, 12 alpha, 13 dt_ms,
 // 14 hl_ms_cfg, 15 y_abs
 // -----------------------------------------------------------------------------
-inline int prf_features_v1(const PrfState& st, const PrfParams& p, long long nowMs, double* out)
+inline int 		prf_features_v1(const PrfState& st, const PrfParams& p, long long nowMs, double* out)
 {
   if(!out) return 0; const long long dtT = (st.tTrig>0? nowMs - st.tTrig : 0);
   out[0]=du::sanitize(st.y); out[1]=du::sanitize(st.v); out[2]=du::sanitize(st.a);
