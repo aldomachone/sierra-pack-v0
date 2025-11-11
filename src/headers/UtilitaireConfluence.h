@@ -33,14 +33,14 @@ namespace du {
 // ---------------------------------------------------------------------------
 // Compat v0 — inchangé
 // ---------------------------------------------------------------------------
-inline float 	cfConfluenceScore(const Zone* zs, int count, float price, float minDist)
+inline float 	cfConfluenceScore			(const Zone* zs, int count, float price, float minDist)
 {
   float s = 0.0f; const float md = std::max(1e-6f, minDist);
   for (int i = 0; i < count; ++i) s += 1.0f / std::max(md, (float)znDist(zs[i], price));
   return du::sanitize(s);
 }
 
-inline void 	cfNearestZone(double price, const double* zones, int n, int& idx, double& dist)
+inline void 	cfNearestZone				(double price, const double* zones, int n, int& idx, double& dist)
 {
   idx = -1; dist = 0.0; if (!zones || n <= 0) return;
   double best = 1e300; int bi = -1;
@@ -51,7 +51,7 @@ inline void 	cfNearestZone(double price, const double* zones, int n, int& idx, d
   idx = bi; dist = (bi >= 0) ? best : 0.0;
 }
 
-inline double 	cfScoreWeighted(const double* items, const double* w, int n)
+inline double 	cfScoreWeighted				(const double* items, const double* w, int n)
 {
   if (!items || n <= 0) return 0.0; double s = 0.0;
   for (int i = 0; i < n; ++i) s += items[i] * (w ? w[i] : 1.0);
@@ -83,7 +83,7 @@ struct 			CfLevel
 };
 
 // Distance (prix → niveau) en prix natif. Si zone [lo,hi], distance = 0 si inside.
-inline double 	cf_distance_native(double price, const CfLevel& L)
+inline double 	cf_distance_native			(double price, const CfLevel& L)
 {
   if (L.hi > L.lo) {
     if (price >= L.lo && price <= L.hi) return 0.0;
@@ -94,21 +94,21 @@ inline double 	cf_distance_native(double price, const CfLevel& L)
   return std::fabs(price - c);
 }
 
-inline double 	cf_distance_ticks(double price, const CfLevel& L, double tickSize)
+inline double 	cf_distance_ticks			(double price, const CfLevel& L, double tickSize)
 {
   const double d = cf_distance_native(price, L);
   return (tickSize > 0.0) ? (d / tickSize) : d;
 }
 
 // Kernel 1/(eps + distance)
-inline double 	cf_kernel_inv(double distTicks, double epsTicks)
+inline double 	cf_kernel_inv				(double distTicks, double epsTicks)
 {
   const double e = epsTicks > 0.0 ? epsTicks : 1e-6;
   return 1.0 / (e + std::max(0.0, distTicks));
 }
 
 // Score total = Σ w_i * K( dist_i )
-inline double 	cf_score_levels(double price, const CfLevel* L, int n, double tickSize, double epsTicks)
+inline double 	cf_score_levels				(double price, const CfLevel* L, int n, double tickSize, double epsTicks)
 {
   if (!L || n <= 0) return 0.0; double s = 0.0;
   for (int i = 0; i < n; ++i) {
@@ -120,7 +120,7 @@ inline double 	cf_score_levels(double price, const CfLevel* L, int n, double tic
 }
 
 // Recherche du niveau le plus proche
-inline int 		cf_nearest_level(double price, const CfLevel* L, int n, double tickSize, double& outDistTicks)
+inline int 		cf_nearest_level			(double price, const CfLevel* L, int n, double tickSize, double& outDistTicks)
 {
   outDistTicks = 0.0; if (!L || n <= 0) return -1;
   double best = 1e300; int bi = -1;
@@ -133,7 +133,7 @@ inline int 		cf_nearest_level(double price, const CfLevel* L, int n, double tick
 }
 
 // Construction d’un petit tableau de niveaux standard à partir de sorties déjà calculées
-inline int 		cf_pack_levels_from_sources(
+inline int 		cf_pack_levels_from_sources	(
   double price,
   const du::PivotOut* piv,
   const du::VwapAdvState* vw,
@@ -185,7 +185,7 @@ inline int 		cf_pack_levels_from_sources(
 // 6: score_pivots_only, 7: score_ohlc_only, 8: score_range_only,
 // 9: score_zones_only, 10..15 réservées pour extensions.
 // ---------------------------------------------------------------------------
-inline int 		cf_features_v1(double price, const CfLevel* L, int n, double tickSize, double epsTicks, double* out)
+inline int 		cf_features_v1				(double price, const CfLevel* L, int n, double tickSize, double epsTicks, double* out)
 {
   if (!out) return 0;
   out[0] = du::sanitize(cf_score_levels(price, L, n, tickSize, epsTicks));
