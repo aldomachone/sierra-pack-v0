@@ -1,13 +1,13 @@
 // ============================================================================
-// Pack v0 — Engines v0 (ExtraHFT3)
+// Pack v0 — Engines v0 (lot Extra-HFT #15)
 // ============================================================================
 #include "sierrachart.h"
 #include "Pack_v0.h"
 
-SCSFExport scsf_ORDERBOOK_SLOPE_ENGINE_v0(SCStudyInterfaceRef sc)
+SCSFExport scsf_QUEUE_REPLENISH_RATE_ENGINE_v0(SCStudyInterfaceRef sc)
 {
   if(sc.SetDefaults){
-    sc.GraphName="ORDERBOOK_SLOPE_ENGINE_v0"; sc.AutoLoop=0; sc.UpdateAlways=1; sc.GraphRegion=0; sc.ValueFormat=26; sc.UsesMarketDepthData=1; sc.FreeDLL=0;
+    sc.GraphName="QUEUE_REPLENISH_RATE_ENGINE_v0"; sc.AutoLoop=0; sc.UpdateAlways=1; sc.GraphRegion=0; sc.ValueFormat=26; sc.UsesMarketDepthData=1; sc.FreeDLL=0;
     sc.Subgraph[1].Name = "SG01";
     sc.Subgraph[1].DrawStyle = DRAWSTYLE_IGNORE;
     sc.Subgraph[1].DrawZeros = false;
@@ -24,11 +24,10 @@ SCSFExport scsf_ORDERBOOK_SLOPE_ENGINE_v0(SCStudyInterfaceRef sc)
     sc.Subgraph[4].DrawStyle = DRAWSTYLE_IGNORE;
     sc.Subgraph[4].DrawZeros = false;
     sc.Subgraph[4].DisplayAsMainPriceGraphValue = 0;
-    sc.Input[0].Name="01. Niveaux max"; sc.Input[0].SetInt(20);
+    sc.Input[0].Name="01. Niveaux near"; sc.Input[0].SetInt(4);
     sc.DrawZeros=false; return;
   }
-  int L=sc.Input[0].GetInt(); s_MarketDepthEntry md{};
-  auto slope=[&](bool bid){ double x=0,y=0,xx=0,xy=0; int n=0; int N= bid? sc.GetBidMarketDepthNumberOfLevels(): sc.GetAskMarketDepthNumberOfLevels();
-    for(int i=1;i<=N && i<=L; ++i){ if(bid) sc.GetBidMarketDepthEntryAtLevel(md,i-1); else sc.GetAskMarketDepthEntryAtLevel(md,i-1); double q=md.Quantity; if(q<=0) continue; double u=log((double)i); double v=log(q); x+=u; y+=v; xx+=u*u; xy+=u*v; ++n; } double den=n*xx-x*x; return (den!=0? (n*xy-x*y)/den:0.0); };
-  sc.Subgraph[1][sc.ArraySize-1]=slope(true); sc.Subgraph[2][sc.ArraySize-1]=slope(false);
+  int N=sc.Input[0].GetInt(); static double prevB[64], prevA[64]; s_MarketDepthEntry md{}; double repB=0, repA=0;
+  for(int i=0;i<N; ++i){ double qb=0, qa=0; if(i<sc.GetBidMarketDepthNumberOfLevels()){ sc.GetBidMarketDepthEntryAtLevel(md,i); qb=md.Quantity; } if(i<sc.GetAskMarketDepthNumberOfLevels()){ sc.GetAskMarketDepthEntryAtLevel(md,i); qa=md.Quantity; } if(qb>prevB[i]) repB += qb-prevB[i]; if(qa>prevA[i]) repA += qa-prevA[i]; prevB[i]=qb; prevA[i]=qa; }
+  sc.Subgraph[1][sc.ArraySize-1]=repB; sc.Subgraph[2][sc.ArraySize-1]=repA;
 }

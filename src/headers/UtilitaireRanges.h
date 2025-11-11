@@ -20,11 +20,11 @@ namespace du {
 // ---------------------------------------------------------------------------
 // Compat v0
 // ---------------------------------------------------------------------------
-struct RangeOut { float lo=0, hi=0, pos=0; };
-struct rgIBInfo { double hi{0}, lo{0}; };
+struct 			RangeOut 				{ float lo=0, hi=0, pos=0; };
+struct 			rgIBInfo 				{ double hi{0}, lo{0}; };
 
 // Range & position relative sur N dernières barres (close vs [lo,hi])
-inline RangeOut rgRangePos(const SCStudyInterfaceRef& sc, int lookback)
+inline 			RangeOut rgRangePos		(const SCStudyInterfaceRef& sc, int lookback)
 {
   RangeOut r{};
   const int n = lookback <= 1 ? 1 : lookback;
@@ -38,14 +38,14 @@ inline RangeOut rgRangePos(const SCStudyInterfaceRef& sc, int lookback)
   return r;
 }
 
-inline rgIBInfo rgIB(long long /*sessionStart*/, const double* /*firstHourHL*/) { return {}; } // compat v0 dummy
-inline double   rgSessionRange(double hi,double lo) { return hi-lo; }
-inline double   rgPosInRange(double price,double hi,double lo) { if(hi<=lo) return 0.5; return (price-lo)/((hi-lo)); }
+inline rgIBInfo rgIB					(long long /*sessionStart*/, const double* /*firstHourHL*/) { return {}; } // compat v0 dummy
+inline double   rgSessionRange			(double hi,double lo) { return hi-lo; }
+inline double   rgPosInRange			(double price,double hi,double lo) { if(hi<=lo) return 0.5; return (price-lo)/((hi-lo)); }
 
 // ---------------------------------------------------------------------------
 // v1 — enrichi
 // ---------------------------------------------------------------------------
-struct RgParams
+struct 			RgParams
 {
   bool   resetOnNewDay   = true;   // reset auto au changement YMD
   bool   useSessionTimes = true;   // reset sur IsStartOfTradingDay
@@ -54,7 +54,7 @@ struct RgParams
   double tickSize        = 0.0;    // pour distances en ticks
 };
 
-struct RgState
+struct 			RgState
 {
   // Session courante
   int        lastYMD      = 0;      // YYYYMMDD
@@ -86,8 +86,8 @@ struct RgState
 };
 
 // Helpers temps
-inline int ymd(const SCDateTime& t) { return t.GetDateYMD(); }
-inline int minutes_diff(const SCDateTime& a, const SCDateTime& b)
+inline int 		ymd						(const SCDateTime& t) { return t.GetDateYMD(); }
+inline int 		minutes_diff			(const SCDateTime& a, const SCDateTime& b)
 {
   // Sierra: SCDateTime est un jour julien fractionnaire → Δmin = Δj * 24*60
   const double dm = ((double)a - (double)b) * 1440.0;
@@ -97,7 +97,7 @@ inline int minutes_diff(const SCDateTime& a, const SCDateTime& b)
 // ---------------------------------------------------------------------------
 // Mise à jour bar‑based (à appeler une fois par barre)
 // ---------------------------------------------------------------------------
-inline void rg_update_bar(SCStudyInterfaceRef sc, const RgParams& p, RgState& st)
+inline void 	rg_update_bar			(SCStudyInterfaceRef sc, const RgParams& p, RgState& st)
 {
   const int i = sc.Index;
   const SCDateTime t = sc.BaseDateTimeIn[i];
@@ -149,10 +149,10 @@ inline void rg_update_bar(SCStudyInterfaceRef sc, const RgParams& p, RgState& st
 // ---------------------------------------------------------------------------
 // Dérivés et utilitaires
 // ---------------------------------------------------------------------------
-inline double rg_mid(double lo, double hi) { return 0.5*(lo+hi); }
-inline int    rg_cross(double price, double level) { return price < level ? 0 : (price > level ? 2 : 1); }
+inline double 	rg_mid					(double lo, double hi) { return 0.5*(lo+hi); }
+inline int    	rg_cross				(double price, double level) { return price < level ? 0 : (price > level ? 2 : 1); }
 
-inline void rg_dist_ticks(double price, double tickSize, double lo, double hi,
+inline void 	rg_dist_ticks			(double price, double tickSize, double lo, double hi,
                           double& dLo, double& dHi, double& dMid)
 {
   if (tickSize <= 0.0) { dLo=dHi=dMid=0.0; return; }
@@ -163,13 +163,13 @@ inline void rg_dist_ticks(double price, double tickSize, double lo, double hi,
 }
 
 // Position relative [0..1]
-inline double rg_pos01(double price, double lo, double hi)
+inline double 	rg_pos01				(double price, double lo, double hi)
 {
   if (hi <= lo) return 0.5; const double w = hi - lo; const double x = (price - lo) / w; return x<0?0:(x>1?1:x);
 }
 
 // Rolling range brut sur N barres (écrit hi/lo)
-inline void rg_range_last_n(const SCStudyInterfaceRef& sc, int n, double& outLo, double& outHi)
+inline void 	rg_range_last_n			(const SCStudyInterfaceRef& sc, int n, double& outLo, double& outHi)
 {
   const int i1=sc.Index; const int i0 = std::max(0, i1-(std::max(1,n)-1));
   double hi=sc.High[i0], lo=sc.Low[i0];
@@ -185,7 +185,7 @@ inline void rg_range_last_n(const SCStudyInterfaceRef& sc, int n, double& outLo,
 // 15: last_close
 // Distances en ticks disponibles via rg_dist_ticks si besoin.
 // ---------------------------------------------------------------------------
-inline int rg_features_v1(const RgState& st, double price, const RgParams& p, double* out)
+inline int 	rg_features_v1				(const RgState& st, double price, const RgParams& p, double* out)
 {
   if (!out) return 0;
   const double sMid = rg_mid(st.sessLo, st.sessHi);

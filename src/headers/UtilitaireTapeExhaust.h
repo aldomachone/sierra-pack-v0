@@ -33,17 +33,17 @@ namespace du {
 // ---------------------------------------------------------------------------
 // Constantes légères
 // ---------------------------------------------------------------------------
-constexpr double kTiny     = 1e-12;
-constexpr double kEpsPct   = 1e-9;   // pour éviter les divisions par 0 sur %
-constexpr double kMsInSec  = 1000.0;
+constexpr double 	kTiny     = 1e-12	;
+constexpr double 	kEpsPct   = 1e-9	;   // pour éviter les divisions par 0 sur %
+constexpr double 	kMsInSec  = 1000.0	;
 
 // ---------------------------------------------------------------------------
 // Helpers math
 // ---------------------------------------------------------------------------
-inline double clamp(double x, double lo, double hi)            { return x < lo ? lo : (x > hi ? hi : x); }
-inline double clamp01(double x)                                { return clamp(x, 0.0, 1.0); }
-inline double pct_drop(double ref, double now)                 { return ref <= kTiny ? 0.0 : (ref - now) * 100.0 / ref; }
-inline double ema_alpha_from_half_life_ms(double halfLifeMs, double dtMs)
+inline double 		clamp						(double x, double lo, double hi)	{ return x < lo ? lo : (x > hi ? hi : x); }
+inline double 		clamp01						(double x)                      	{ return clamp(x, 0.0, 1.0); }
+inline double 		pct_drop					(double ref, double now)        	{ return ref <= kTiny ? 0.0 : (ref - now) * 100.0 / ref; }
+inline double 		ema_alpha_from_half_life_ms	(double halfLifeMs, double dtMs)
 {
   if (halfLifeMs <= 0.0 || dtMs <= 0.0) return 1.0; // dégénérescence = tout poids au dernier échantillon
   // alpha = 1 - exp(-ln(2) * dt/HL)
@@ -55,19 +55,18 @@ inline double ema_alpha_from_half_life_ms(double halfLifeMs, double dtMs)
 // ---------------------------------------------------------------------------
 // Compatibilité v0 (API simple)
 // ---------------------------------------------------------------------------
-inline float teExhaustScore(float paceNow, float paceEma)
-{
+inline float 		teExhaustScore				(float paceNow, float paceEma)		{
   const float d = paceEma <= 0 ? 0.0f : (paceEma - paceNow) / paceEma;
   return du::sanitize(static_cast<float>(100.0f * d)); // %
 }
 
-inline bool teExhaust(double dropPct, int minSamples) { return dropPct > 0.0 && minSamples > 0; }
-inline bool teFatigue(double emaRate, double lowThr)  { return emaRate < lowThr; }
+inline bool 		teExhaust					(double dropPct, int minSamples) 	{ return dropPct > 0.0 && minSamples > 0; }
+inline bool 		teFatigue					(double emaRate, double lowThr)  	{ return emaRate < lowThr; }
 
 // ---------------------------------------------------------------------------
 // État cumulatif — suivi EMA + variance (Welford) + réfractaire + métriques
 // ---------------------------------------------------------------------------
-struct TeExhaustParams
+struct 				TeExhaustParams
 {
   // Fenêtrage/EMA
   double halfLifeMs      = 1500.0;   // demi‑vie EMA (1.5 s par défaut)
@@ -86,7 +85,7 @@ struct TeExhaustParams
   double confEmaScale    = 0.5;      // pondère l'impact du ratio ema
 };
 
-struct TeExhaustState
+struct 				TeExhaustState
 {
   // Base
   long long lastMs       = 0;        // timestamp du dernier update
@@ -123,7 +122,7 @@ struct TeExhaustState
 };
 
 // Mise à jour Welford
-inline void welford_update(TeExhaustState& st, double x)
+inline void 		welford_update				(TeExhaustState& st, double x)
 {
   st.n += 1;
   const double d  = x - st.mean;
@@ -131,13 +130,13 @@ inline void welford_update(TeExhaustState& st, double x)
   st.m2          += d * (x - st.mean);
 }
 
-inline double welford_var(const TeExhaustState& st)
+inline double 		welford_var					(const TeExhaustState& st)
 {
   return (st.n > 1) ? (st.m2 / (st.n - 1)) : 0.0;
 }
 
 // Score de confiance 0..1 en fonction du drop, de l'EMA et du nombre d'échantillons
-inline double te_confidence(const TeExhaustState& st, const TeExhaustParams& p)
+inline double 		te_confidence				(const TeExhaustState& st, const TeExhaustParams& p)
 {
   if (st.n <= 0 || st.emaRate <= 0.0) return 0.0;
   // Normalisation simple
@@ -155,7 +154,7 @@ inline double te_confidence(const TeExhaustState& st, const TeExhaustParams& p)
 //  - outTriggered : true si un événement "exhaustion" est détecté
 //  - outScorePct  : intensité de la chute en % (vs EMA)
 //  - outZ         : z‑score courant
-inline void te_update(
+inline void 		te_update					(
   TeExhaustState& st,
   long long nowMs,
   double paceNow,
@@ -224,7 +223,7 @@ inline void te_update(
 }
 
 // Conversion rapide inter‑arrivée → pace (/s)
-inline double te_pace_from_inter_ms(double deltaMs)
+inline double 		te_pace_from_inter_ms		(double deltaMs)
 {
   if (deltaMs <= 0.0) return 0.0;
   return kMsInSec / deltaMs;
@@ -245,7 +244,7 @@ inline double te_pace_from_inter_ms(double deltaMs)
 //  9: ema_ok    {0,1}
 // 10: drop_ok   {0,1}
 // 11: warm_ok   {0,1}
-inline int te_features_v1(const TeExhaustState& st, const TeExhaustParams& p, double* out)
+inline int 			te_features_v1				(const TeExhaustState& st, const TeExhaustParams& p, double* out)
 {
   if (!out) return 0;
   const double var = welford_var(st);
@@ -267,7 +266,7 @@ inline int te_features_v1(const TeExhaustState& st, const TeExhaustParams& p, do
 }
 
 // Raccourci monosource: inter‑arrivée → update → trigger
-inline bool te_step_from_delta_ms(
+inline bool 		te_step_from_delta_ms		(
   TeExhaustState& st,
   long long nowMs,
   double interArrivalMs,
@@ -283,7 +282,7 @@ inline bool te_step_from_delta_ms(
 }
 
 // Reset gardant éventuellement EMA/variance si souhaité
-inline void te_soft_reset(TeExhaustState& st, bool keepStats)
+inline void			te_soft_reset				(TeExhaustState& st, bool keepStats)
 {
   const double keepEma   = st.emaRate;
   const double keepMean  = st.mean;

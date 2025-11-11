@@ -20,14 +20,14 @@ namespace du {
 // ---------------------------------------------------------------------------
 // v0 — Compat minimaliste
 // ---------------------------------------------------------------------------
-struct VwapState { double cumPV=0, cumV=0; int lastDay=0; };
+struct 			VwapState 		{ double cumPV=0, cumV=0; int lastDay=0; };
 
-inline float typical(const SCStudyInterfaceRef& sc, int i)
+inline float 	typical			(const SCStudyInterfaceRef& sc, int i)
 {
   return (float)((sc.High[i] + sc.Low[i] + sc.Close[i]) / 3.0);
 }
 
-inline float vwap(SCStudyInterfaceRef sc, VwapState& st)
+inline float 	vwap			(SCStudyInterfaceRef sc, VwapState& st)
 {
   const int i = sc.Index; const int day = sc.BaseDateTimeIn[i].GetDateYMD();
   if (i == 0 || day != st.lastDay) { st.cumPV = 0; st.cumV = 0; st.lastDay = day; }
@@ -37,14 +37,14 @@ inline float vwap(SCStudyInterfaceRef sc, VwapState& st)
   return (float)(st.cumV > 1e-12 ? st.cumPV / st.cumV : tp);
 }
 
-inline double vwVwap(double sumPQ, double sumQ) { return sumQ > 1e-12 ? sumPQ / sumQ : 0.0; }
-inline void   vwBands(double vwap, double stdev, double k, double& upper, double& lower) { upper = vwap + k * stdev; lower = vwap - k * stdev; }
-inline int    vwCrossState(double price, double vwap) { return price < vwap ? 0 : (price > vwap ? 2 : 1); }
+inline double	vwVwap			(double sumPQ, double sumQ) { return sumQ > 1e-12 ? sumPQ / sumQ : 0.0; }
+inline void  	vwBands			(double vwap, double stdev, double k, double& upper, double& lower) { upper = vwap + k * stdev; lower = vwap - k * stdev; }
+inline int   	vwCrossState	(double price, double vwap) { return price < vwap ? 0 : (price > vwap ? 2 : 1); }
 
 // ---------------------------------------------------------------------------
 // v1 — Enrichi : paramètres et état avancés
 // ---------------------------------------------------------------------------
-struct VwapParams
+struct 			VwapParams
 {
   // Reset & ancrage
   bool   resetOnNewDay   = true;   // reset automatique au changement de date YMD
@@ -59,7 +59,7 @@ struct VwapParams
   double tickSize        = 0.0;    // pour calculer distance en ticks (optionnel)
 };
 
-struct VwapAdvState
+struct 			VwapAdvState
 {
   // Cumuls
   double sumPV = 0.0;  // Σ price*vol (typical*vol si bar‑based)
@@ -95,17 +95,17 @@ struct VwapAdvState
 // ---------------------------------------------------------------------------
 // Helpers internes
 // ---------------------------------------------------------------------------
-inline void welford_update(double x, double& mean, double& m2, int& n)
+inline void 	welford_update	(double x, double& mean, double& m2, int& n)
 {
   n += 1; const double d = x - mean; mean += d / n; m2 += d * (x - mean);
 }
 
-inline double welford_std(double mean, double m2, int n)
+inline double 	welford_std		(double mean, double m2, int n)
 {
   return (n > 1 && m2 > 0.0) ? std::sqrt(m2 / (n - 1)) : 0.0;
 }
 
-inline bool is_anchor_time(const SCDateTime& t, int hh, int mm)
+inline bool 	is_anchor_time	(const SCDateTime& t, int hh, int mm)
 {
   if (hh < 0) return false; // ancre désactivée
   return t.GetHour() == hh && t.GetMinute() == mm;
@@ -114,7 +114,7 @@ inline bool is_anchor_time(const SCDateTime& t, int hh, int mm)
 // ---------------------------------------------------------------------------
 // Mise à jour BAR‑BASED (OHLC+Volume) — à appeler une fois par barre
 // ---------------------------------------------------------------------------
-inline void vw_update_bar(SCStudyInterfaceRef sc, const VwapParams& p, VwapAdvState& st)
+inline void 	vw_update_bar	(SCStudyInterfaceRef sc, const VwapParams& p, VwapAdvState& st)
 {
   const int i = sc.Index;
   const SCDateTime t = sc.BaseDateTimeIn[i];
@@ -145,7 +145,7 @@ inline void vw_update_bar(SCStudyInterfaceRef sc, const VwapParams& p, VwapAdvSt
 // ---------------------------------------------------------------------------
 // Mise à jour TICK‑BASED (prix, qty) — à appeler à chaque trade agrégé
 // ---------------------------------------------------------------------------
-inline void vw_update_tick(double price, double qty, const SCDateTime& ts, const VwapParams& p, VwapAdvState& st)
+inline void 	vw_update_tick	(double price, double qty, const SCDateTime& ts, const VwapParams& p, VwapAdvState& st)
 {
   const int ymd = ts.GetDateYMD();
   if (st.n == 0) st.lastYMD = ymd;
@@ -168,21 +168,21 @@ inline void vw_update_tick(double price, double qty, const SCDateTime& ts, const
 // ---------------------------------------------------------------------------
 // Accesseurs et dérivés
 // ---------------------------------------------------------------------------
-inline double vw_value(const VwapAdvState& st)   { return st.lastVwap; }
-inline double vw_stdev(const VwapAdvState& st)   { return st.lastStdev; }
-inline void   vw_bands(const VwapAdvState& st, double& up, double& lo) { up = st.lastUpper; lo = st.lastLower; }
+inline double 	vw_value		(const VwapAdvState& st)   { return st.lastVwap; }
+inline double 	vw_stdev		(const VwapAdvState& st)   { return st.lastStdev; }
+inline void   	vw_bands		(const VwapAdvState& st, double& up, double& lo) { up = st.lastUpper; lo = st.lastLower; }
 
-inline double vw_dist_ticks(const VwapAdvState& st, double tickSize)
+inline double 	vw_dist_ticks	(const VwapAdvState& st, double tickSize)
 {
   if (tickSize <= 0.0) return 0.0; return (st.lastPrice - st.lastVwap) / tickSize;
 }
 
-inline double vw_zscore(const VwapAdvState& st)
+inline double 	vw_zscore		(const VwapAdvState& st)
 {
   return st.lastStdev > 0.0 ? (st.lastPrice - st.lastVwap) / st.lastStdev : 0.0;
 }
 
-inline int vw_cross(const VwapAdvState& st)
+inline int 		vw_cross		(const VwapAdvState& st)
 {
   return vwCrossState(st.lastPrice, st.lastVwap);
 }
@@ -192,7 +192,7 @@ inline int vw_cross(const VwapAdvState& st)
 // 0: vwap, 1: stdev, 2: upper, 3: lower, 4: last_price,
 // 5: zscore, 6: cross_state {0,1,2}, 7: sumV, 8: dist_ticks, 9: anchored{0,1}
 // ---------------------------------------------------------------------------
-inline int vw_features_v1(const VwapAdvState& st, const VwapParams& p, double* out)
+inline int 		vw_features_v1	(const VwapAdvState& st, const VwapParams& p, double* out)
 {
   if (!out) return 0;
   out[0] = du::sanitize(st.lastVwap);

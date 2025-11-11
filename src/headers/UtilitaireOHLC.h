@@ -18,9 +18,9 @@ namespace du {
 // ---------------------------------------------------------------------------
 // Compat v0
 // ---------------------------------------------------------------------------
-struct OHLC { float O=0, H=0, L=0, C=0; };
+struct 			OHLC 					{ float O=0, H=0, L=0, C=0; };
 
-inline OHLC olDaily(const SCStudyInterfaceRef& sc)
+inline 			OHLC olDaily			(const SCStudyInterfaceRef& sc)
 {
   OHLC o{};
   const int i = sc.Index;
@@ -43,22 +43,22 @@ inline OHLC olDaily(const SCStudyInterfaceRef& sc)
   return o;
 }
 
-inline void olLevelsTF(int /*tf*/, double& O,double& H,double& L,double& C) { O=H=L=C=0.0; }
-inline int  olBreakState(double price,double level) { if(price>level) return 2; if(price<level) return 0; return 1; }
+inline void 	olLevelsTF				(int /*tf*/, double& O,double& H,double& L,double& C) { O=H=L=C=0.0; }
+inline int  	olBreakState			(double price,double level) { if(price>level) return 2; if(price<level) return 0; return 1; }
 
 // ---------------------------------------------------------------------------
 // v1 — enrichi
 // ---------------------------------------------------------------------------
-enum OlTF : int { OL_Daily=0, OL_Weekly=1, OL_Monthly=2, OL_Yearly=3 };
+enum 			OlTF : int 				{ OL_Daily=0, OL_Weekly=1, OL_Monthly=2, OL_Yearly=3 };
 
 // Helpers temps
-inline int ymd(const SCDateTime& t)        { return t.GetDateYMD(); }
-inline int ym (const SCDateTime& t)        { return t.GetYear()*100 + t.GetMonth(); }
-inline int y  (const SCDateTime& t)        { return t.GetYear(); }
-inline int dow(const SCDateTime& t)        { return t.GetDayOfWeek(); } // 0=Dimanche (Sierra), 1=Lundi, ...
+inline int 		ymd						(const SCDateTime& t)        { return t.GetDateYMD(); }
+inline int 		ym 						(const SCDateTime& t)        { return t.GetYear()*100 + t.GetMonth(); }
+inline int 		y  						(const SCDateTime& t)        { return t.GetYear(); }
+inline int 		dow						(const SCDateTime& t)        { return t.GetDayOfWeek(); } // 0=Dimanche (Sierra), 1=Lundi, ...
 
 // Frontières de période (début de période → key)
-inline int period_key(const SCDateTime& t, OlTF tf)
+inline int		period_key				(const SCDateTime& t, OlTF tf)
 {
   switch(tf)
   {
@@ -81,7 +81,7 @@ inline int period_key(const SCDateTime& t, OlTF tf)
 }
 
 // Scan d'une période donnée par sa clé (retourne firstIdx, lastIdx inclus)
-inline bool scan_period_bounds(const SCStudyInterfaceRef& sc, int iLast, int key, OlTF tf, int& first, int& last)
+inline bool 	scan_period_bounds		(const SCStudyInterfaceRef& sc, int iLast, int key, OlTF tf, int& first, int& last)
 {
   if (iLast < 0) return false;
   last = iLast;
@@ -97,7 +97,7 @@ inline bool scan_period_bounds(const SCStudyInterfaceRef& sc, int iLast, int key
 
 // Trouve la période d'offset nPeriods en arrière par rapport à l'index iRef.
 // offset=0 courant, 1 précédent, ... Renvoie aussi la clé trouvée.
-inline bool find_period_by_offset(const SCStudyInterfaceRef& sc, int iRef, OlTF tf, int offset, int& outKey, int& outFirst, int& outLast)
+inline bool 	find_period_by_offset	(const SCStudyInterfaceRef& sc, int iRef, OlTF tf, int offset, int& outKey, int& outFirst, int& outLast)
 {
   if (iRef < 0) return false;
   int seen = 0;
@@ -129,7 +129,7 @@ inline bool find_period_by_offset(const SCStudyInterfaceRef& sc, int iRef, OlTF 
 }
 
 // Calcule O/H/L/C pour une période identifiée par (first..last)
-inline void compute_ohlc_range(const SCStudyInterfaceRef& sc, int first, int last, double& O, double& H, double& L, double& C)
+inline void 	compute_ohlc_range		(const SCStudyInterfaceRef& sc, int first, int last, double& O, double& H, double& L, double& C)
 {
   if (first < 0 || last < 0 || first > last) { O=H=L=C=0.0; return; }
   O = sc.Open[first];
@@ -143,7 +143,7 @@ inline void compute_ohlc_range(const SCStudyInterfaceRef& sc, int first, int las
 }
 
 // API pratique : OHLC pour TF + offset (0 = courant)
-inline bool olGet(const SCStudyInterfaceRef& sc, OlTF tf, int offset, double& O, double& H, double& L, double& C, int* outFirst=nullptr, int* outLast=nullptr)
+inline bool 	olGet					(const SCStudyInterfaceRef& sc, OlTF tf, int offset, double& O, double& H, double& L, double& C, int* outFirst=nullptr, int* outLast=nullptr)
 {
   const int i = sc.Index;
   int key=0, first=0, last=0;
@@ -154,17 +154,17 @@ inline bool olGet(const SCStudyInterfaceRef& sc, OlTF tf, int offset, double& O,
 }
 
 // États de croisement/rupture
-inline int olCross(double price, double level) { return price < level ? 0 : (price > level ? 2 : 1); }
-inline int olBreak(double price, double level) { return olCross(price, level); }
+inline int 		olCross					(double price, double level) { return price < level ? 0 : (price > level ? 2 : 1); }
+inline int 		olBreak					(double price, double level) { return olCross(price, level); }
 
 // Position relative du prix dans le range [L,H]
-inline double olPosInRange(double price, double L, double H)
+inline double 	olPosInRange			(double price, double L, double H)
 {
   if (H <= L) return 0.5; const double x = (price - L) / (H - L); return x < 0.0 ? 0.0 : (x > 1.0 ? 1.0 : x);
 }
 
 // Distances en ticks vers O/H/L/C
-inline void olDistancesTicks(double price, double tickSize, double O, double H, double L, double C,
+inline void 	olDistancesTicks		(double price, double tickSize, double O, double H, double L, double C,
                              double& dO, double& dH, double& dL, double& dC)
 {
   if (tickSize <= 0.0) { dO=dH=dL=dC=0.0; return; }
@@ -173,7 +173,7 @@ inline void olDistancesTicks(double price, double tickSize, double O, double H, 
 
 // Features MLP v1 (12 features) :
 // 0 O, 1 H, 2 L, 3 C, 4 posInRange, 5 dO, 6 dH, 7 dL, 8 dC, 9 range(H-L), 10 mid, 11 crossState@C
-inline int ol_features_v1(double price, double tickSize, double O, double H, double L, double C, double* out)
+inline int 		ol_features_v1			(double price, double tickSize, double O, double H, double L, double C, double* out)
 {
   if (!out) return 0;
   double dO, dH, dL, dC; olDistancesTicks(price, tickSize, O, H, L, C, dO, dH, dL, dC);
@@ -187,7 +187,7 @@ inline int ol_features_v1(double price, double tickSize, double O, double H, dou
 }
 
 // Raccourcis utiles : O/H/L/C des N dernières périodes (écrit dans des buffers)
-inline int ol_last_n(const SCStudyInterfaceRef& sc, OlTF tf, int nMax, double* O, double* H, double* L, double* C)
+inline int 		ol_last_n				(const SCStudyInterfaceRef& sc, OlTF tf, int nMax, double* O, double* H, double* L, double* C)
 {
   if (nMax <= 0) return 0; int wrote = 0; int i = sc.Index; int key, first, last;
   // Période courante

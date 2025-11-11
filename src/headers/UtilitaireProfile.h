@@ -19,9 +19,9 @@ namespace du {
 // -----------------------------------------------------------------------------
 // Compat v0
 // -----------------------------------------------------------------------------
-struct ProfileOut { float poc=0, vMax=0; };
+struct 			ProfileOut 				{ float poc=0, vMax=0; };
 
-inline ProfileOut vpPocSimple(const SCStudyInterfaceRef& sc, int lookback)
+inline 			ProfileOut vpPocSimple	(const SCStudyInterfaceRef& sc, int lookback)
 {
   ProfileOut out{};
   const int i0 = std::max(0, sc.Index - std::max(1, lookback) + 1);
@@ -31,14 +31,14 @@ inline ProfileOut vpPocSimple(const SCStudyInterfaceRef& sc, int lookback)
   out.vMax = vBest; return out;
 }
 
-inline int   vpPoc(const double* hist,int n){ int idx=0; double mx=-1e300; for(int i=0;i<n;++i){ if(hist[i]>mx){mx=hist[i]; idx=i;} } return idx; }
-inline void  vpVa (const double* /*hist*/, int /*n*/, double /*pct*/, int& lo, int& hi){ lo=0; hi=0; }
-inline int   vpShift(int currPOC,int prevPOC){ return currPOC-prevPOC; }
+inline int   	vpPoc					(const double* hist,int n){ int idx=0; double mx=-1e300; for(int i=0;i<n;++i){ if(hist[i]>mx){mx=hist[i]; idx=i;} } return idx; }
+inline void  	vpVa 					(const double* /*hist*/, int /*n*/, double /*pct*/, int& lo, int& hi){ lo=0; hi=0; }
+inline int   	vpShift					(int currPOC,int prevPOC){ return currPOC-prevPOC; }
 
 // -----------------------------------------------------------------------------
 // v1 — Enrichi
 // -----------------------------------------------------------------------------
-struct VpParams
+struct 			VpParams
 {
   double  tickSize      = 0.0;   // taille de tick
   double  pctVA         = 0.68;  // % du volume couvert par la VA (0.68, 0.70, 0.95)
@@ -46,7 +46,7 @@ struct VpParams
   bool    clampZeros    = true;  // sanitize histogramme
 };
 
-struct VpStats
+struct 			VpStats
 {
   // Histogramme agrégé
   double totalVol = 0.0;
@@ -67,14 +67,14 @@ struct VpStats
 };
 
 // Map prix → index de bin
-inline int vp_bin_index(double price, double lo, double tick, int nBins)
+inline int 		vp_bin_index			(double price, double lo, double tick, int nBins)
 {
   if (tick <= 0.0) return 0; const double x = (price - lo) / tick; int i = (int)std::floor(x + 0.5);
   if (i < 0) i = 0; if (i > nBins-1) i = nBins-1; return i;
 }
 
 // Construction fallback bar-based: on répartit le volume entre Low..High
-inline void vp_build_hist_bar_based(const SCStudyInterfaceRef& sc, int first, int last,
+inline void 	vp_build_hist_bar_based	(const SCStudyInterfaceRef& sc, int first, int last,
                                    double loPrice, double tick, double* hist, int nBins)
 {
   if (!hist || nBins<=0) return; for(int i=0;i<nBins;++i) hist[i]=0.0;
@@ -91,7 +91,7 @@ inline void vp_build_hist_bar_based(const SCStudyInterfaceRef& sc, int first, in
 }
 
 // Construction précise via VAP (si VolumeAtPriceForBars actif)
-inline bool vp_build_hist_vap(const SCStudyInterfaceRef& sc, int first, int last,
+inline bool 	vp_build_hist_vap		(const SCStudyInterfaceRef& sc, int first, int last,
                               double loPrice, double tick, double* hist, int nBins)
 {
   if (!hist || nBins<=0) return false; for(int i=0;i<nBins;++i) hist[i]=0.0;
@@ -115,20 +115,20 @@ inline bool vp_build_hist_vap(const SCStudyInterfaceRef& sc, int first, int last
 }
 
 // Sanitize histogramme (clamp NaN/neg)
-inline void vp_hist_sanitize(double* hist, int n)
+inline void 	vp_hist_sanitize		(double* hist, int n)
 {
   if(!hist) return; for(int i=0;i<n;++i){ if(!std::isfinite(hist[i]) || hist[i]<0.0) hist[i]=0.0; }
 }
 
 // Totaux + POC
-inline void vp_poc_and_total(const double* hist, int n, int& pocIdx, double& total, double& pocVol)
+inline void 	vp_poc_and_total		(const double* hist, int n, int& pocIdx, double& total, double& pocVol)
 {
   total=0.0; pocIdx=0; double mx=-1e300; pocVol=0.0; for(int i=0;i<n;++i){ const double v=hist[i]; total+=v; if(v>mx){mx=v; pocIdx=i;} }
   pocVol = (n>0? hist[pocIdx] : 0.0);
 }
 
 // Vale Area par expansion autour du POC jusqu’à couvrir pctVA du volume
-inline void vp_value_area(const double* hist, int n, int pocIdx, double pctVA, int& vaLo, int& vaHi)
+inline void 	vp_value_area			(const double* hist, int n, int pocIdx, double pctVA, int& vaLo, int& vaHi)
 {
   vaLo = vaHi = pocIdx; if(n<=0) return; double total=0.0; for(int i=0;i<n;++i) total+=hist[i];
   const double target = pctVA <= 0.0 ? 0.0 : (pctVA >= 1.0 ? total : pctVA * total);
@@ -144,7 +144,7 @@ inline void vp_value_area(const double* hist, int n, int pocIdx, double pctVA, i
 }
 
 // Moments sur indices (skew/kurt) normalisés par variance^1.5 et variance^2
-inline void vp_moments_idx(const double* hist, int n, double& meanI, double& skew, double& kurt)
+inline void 	vp_moments_idx			(const double* hist, int n, double& meanI, double& skew, double& kurt)
 {
   meanI=0.0; skew=0.0; kurt=0.0; double sum=0.0; for(int i=0;i<n;++i) sum+=hist[i]; if(sum<=0.0) return;
   for(int i=0;i<n;++i) meanI += i*hist[i]; meanI/=sum; double m2=0.0,m3=0.0,m4=0.0;
@@ -154,7 +154,7 @@ inline void vp_moments_idx(const double* hist, int n, double& meanI, double& ske
 }
 
 // Pipeline complet de construction + stats
-inline void vp_build_and_stats(SCStudyInterfaceRef sc, int first, int last,
+inline void 	vp_build_and_stats		(SCStudyInterfaceRef sc, int first, int last,
                                double loPrice, double tick, double* hist, int nBins,
                                const VpParams& p, VpStats& st)
 {
@@ -171,7 +171,7 @@ inline void vp_build_and_stats(SCStudyInterfaceRef sc, int first, int last,
 }
 
 // Distance en ticks depuis un prix vers POC/VA bornes
-inline void vp_distances_ticks(const VpStats& st, double price, double tick, double& dPOC, double& dVAL, double& dVAH)
+inline void 	vp_distances_ticks		(const VpStats& st, double price, double tick, double& dPOC, double& dVAL, double& dVAH)
 {
   if (tick<=0.0){ dPOC=dVAL=dVAH=0.0; return; }
   dPOC = (price - st.pocPrice)/tick; dVAL = (price - st.vaLo)/tick; dVAH = (price - st.vaHi)/tick;
@@ -183,7 +183,7 @@ inline void vp_distances_ticks(const VpStats& st, double price, double tick, dou
 // 6: mean_idx, 7: skew, 8: kurt, 9: dPOC_ticks, 10: dVAL_ticks, 11: dVAH_ticks,
 // 12: in_VA{0,1}, 13: poc_ratio (poc_vol/total), 14: va_coverage (≈pctVA atteint), 15: bins
 // -----------------------------------------------------------------------------
-inline int vp_features_v1(const VpStats& st, double price, double tick, int nBins, double* out)
+inline int 		vp_features_v1			(const VpStats& st, double price, double tick, int nBins, double* out)
 {
   if(!out) return 0; double dPOC=0,dVAL=0,dVAH=0; vp_distances_ticks(st, price, tick, dPOC, dVAL, dVAH);
   const int inVA = (st.vaLo<=st.vaHi && price>=st.vaLo && price<=st.vaHi)? 1 : 0;

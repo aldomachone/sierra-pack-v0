@@ -4,10 +4,10 @@
 #include "sierrachart.h"
 #include "Pack_v0.h"
 
-SCSFExport scsf_EFFICIENCY_RATIO_ENGINE_v0(SCStudyInterfaceRef sc)
+SCSFExport scsf_ASYMMETRIC_RESPONSE_ENGINE_v0(SCStudyInterfaceRef sc)
 {
   if(sc.SetDefaults){
-    sc.GraphName="EFFICIENCY_RATIO_ENGINE_v0"; sc.AutoLoop=0; sc.UpdateAlways=0; sc.GraphRegion=0; sc.ValueFormat=26; sc.FreeDLL=0;
+    sc.GraphName="ASYMMETRIC_RESPONSE_ENGINE_v0"; sc.AutoLoop=0; sc.UpdateAlways=0; sc.GraphRegion=0; sc.ValueFormat=26; sc.FreeDLL=0;
     sc.Subgraph[1].Name = "SG01";
     sc.Subgraph[1].DrawStyle = DRAWSTYLE_IGNORE;
     sc.Subgraph[1].DrawZeros = false;
@@ -24,11 +24,12 @@ SCSFExport scsf_EFFICIENCY_RATIO_ENGINE_v0(SCStudyInterfaceRef sc)
     sc.Subgraph[4].DrawStyle = DRAWSTYLE_IGNORE;
     sc.Subgraph[4].DrawZeros = false;
     sc.Subgraph[4].DisplayAsMainPriceGraphValue = 0; 
-    sc.Input[0].Name="01. Fenêtre bars"; sc.Input[0].SetInt(20);
+    sc.Input[0].Name="01. Fenêtre bars"; sc.Input[0].SetInt(80);
     sc.DrawZeros=false; return;
   }
-  int idx=sc.ArraySize-1; int W=sc.Input[0].GetInt(); if(idx<W) return;
-  double change=fabs(sc.Close[idx]-sc.Close[idx-W]);
-  double sum=0; for(int i=idx-W+1;i<=idx;++i) sum+=fabs(sc.Close[i]-sc.Close[i-1]);
-  sc.Subgraph[1][idx]=(sum>0? change/sum:0.0);
+  if(sc.ArraySize<3) return; int idx=sc.ArraySize-1; int W=sc.Input[0].GetInt(); int s=(idx-W>1? idx-W:1);
+  double up=0,dn=0; int cu=0,cd=0;
+  for(int i=s;i<=idx;++i){ double r=sc.Close[i]-sc.Close[i-1]; if(r>=0){ up+=r; ++cu;} else { dn+=-r; ++cd; } }
+  double au=(cu>0? up/cu:0.0), ad=(cd>0? dn/cd:0.0);
+  sc.Subgraph[1][idx]=au-ad;
 }

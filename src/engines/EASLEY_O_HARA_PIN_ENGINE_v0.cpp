@@ -4,10 +4,10 @@
 #include "sierrachart.h"
 #include "Pack_v0.h"
 
-SCSFExport scsf_EFFICIENCY_RATIO_ENGINE_v0(SCStudyInterfaceRef sc)
+SCSFExport scsf_EASLEY_O_HARA_PIN_ENGINE_v0(SCStudyInterfaceRef sc)
 {
   if(sc.SetDefaults){
-    sc.GraphName="EFFICIENCY_RATIO_ENGINE_v0"; sc.AutoLoop=0; sc.UpdateAlways=0; sc.GraphRegion=0; sc.ValueFormat=26; sc.FreeDLL=0;
+    sc.GraphName="EASLEY_O_HARA_PIN_ENGINE_v0"; sc.AutoLoop=0; sc.UpdateAlways=1; sc.GraphRegion=0; sc.ValueFormat=26; sc.MaintainTimeAndSalesData=1; sc.FreeDLL=0;
     sc.Subgraph[1].Name = "SG01";
     sc.Subgraph[1].DrawStyle = DRAWSTYLE_IGNORE;
     sc.Subgraph[1].DrawZeros = false;
@@ -24,11 +24,13 @@ SCSFExport scsf_EFFICIENCY_RATIO_ENGINE_v0(SCStudyInterfaceRef sc)
     sc.Subgraph[4].DrawStyle = DRAWSTYLE_IGNORE;
     sc.Subgraph[4].DrawZeros = false;
     sc.Subgraph[4].DisplayAsMainPriceGraphValue = 0; 
-    sc.Input[0].Name="01. Fenêtre bars"; sc.Input[0].SetInt(20);
+    sc.Input[0].Name="01. Fenêtre ms"; sc.Input[0].SetInt(60000);
     sc.DrawZeros=false; return;
   }
-  int idx=sc.ArraySize-1; int W=sc.Input[0].GetInt(); if(idx<W) return;
-  double change=fabs(sc.Close[idx]-sc.Close[idx-W]);
-  double sum=0; for(int i=idx-W+1;i<=idx;++i) sum+=fabs(sc.Close[i]-sc.Close[i-1]);
-  sc.Subgraph[1][idx]=(sum>0? change/sum:0.0);
+  c_SCTimeAndSalesArray ts; sc.GetTimeAndSales(ts); if(ts.Size()<5 || sc.ArraySize==0) return;
+  double tEnd=ts[ts.Size()-1].DateTime; double tBeg=tEnd - sc.Input[0].GetInt()/86400000.0;
+  double B=0,S=0; double last=0;
+  for(int i=ts.Size()-1;i>=0; --i){ const auto& e=ts[i]; if(e.DateTime<tBeg) break; if(e.Type!=SC_TS_TRADES) continue; int sgn=(last>0? (e.Price>last? +1:(e.Price<last? -1:0)):0); last=e.Price; if(sgn>=0) B+=e.Volume; else S+=e.Volume; }
+  double tot=B+S; double pin = (tot>0? fabs(B-S)/tot : 0.0);
+  sc.Subgraph[1][sc.ArraySize-1]=pin;
 }

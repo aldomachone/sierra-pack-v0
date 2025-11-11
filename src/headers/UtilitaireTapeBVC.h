@@ -33,33 +33,33 @@ namespace du {
 // ---------------------------------------------------------------------------
 // Types de base et compat v0
 // ---------------------------------------------------------------------------
-enum tbAgg { TB_BUY = 1, TB_SELL = -1, TB_UNK = 0 };
+enum 				tbAgg 						{ TB_BUY = 1, TB_SELL = -1, TB_UNK = 0 };
 
-inline void bvcBar(const SCStudyInterfaceRef& sc, int idx, float& buyVol, float& sellVol)
+inline void 		bvcBar						(const SCStudyInterfaceRef& sc, int idx, float& buyVol, float& sellVol)
 {
   buyVol  = (float)sc.UpVolume[idx];
   sellVol = (float)sc.DownVolume[idx];
 }
 
-inline float bvcDelta(const SCStudyInterfaceRef& sc, int idx)
+inline float 		bvcDelta					(const SCStudyInterfaceRef& sc, int idx)
 {
   return (float)sc.UpVolume[idx] - (float)sc.DownVolume[idx];
 }
 
-inline tbAgg tbClassifyAgg(int /*tsEntry*/) { return TB_UNK; }
-inline int   tbBulkVolume(tbAgg /*side*/, int sz) { return sz; }
-inline int   tbCumDeltaStep(tbAgg side, int sz) { return side==TB_BUY? +sz : side==TB_SELL? -sz : 0; }
+inline 				tbAgg tbClassifyAgg			(int /*tsEntry*/) { return TB_UNK; }
+inline int  		tbBulkVolume				(tbAgg /*side*/, int sz) { return sz; }
+inline int   		tbCumDeltaStep				(tbAgg side, int sz) { return side==TB_BUY? +sz : side==TB_SELL? -sz : 0; }
 
 // ---------------------------------------------------------------------------
 // Constantes locales
 // ---------------------------------------------------------------------------
-constexpr double kDayToMs = 86400000.0;
-constexpr double kTiny    = 1e-12;
+constexpr double 	kDayToMs = 86400000.0;
+constexpr double 	kTiny    = 1e-12;
 
 // ---------------------------------------------------------------------------
 // Conversions SCDateTime ↔ ms
 // ---------------------------------------------------------------------------
-inline long long scdt_to_ms(SCDateTime t)
+inline long long 	scdt_to_ms					(SCDateTime t)
 {
   const double d = (double)t; // Sierra: jours julien fractionnaire
   return (long long)(d * kDayToMs + 0.5);
@@ -68,7 +68,7 @@ inline long long scdt_to_ms(SCDateTime t)
 // ---------------------------------------------------------------------------
 // Quote test et tick rule
 // ---------------------------------------------------------------------------
-inline tbAgg bvc_quote_test(double price, double bid, double ask)
+inline				tbAgg bvc_quote_test		(double price, double bid, double ask)
 {
   if (bid > 0.0 && ask > 0.0 && ask >= bid) {
     if (price >= ask) return TB_BUY;
@@ -77,7 +77,7 @@ inline tbAgg bvc_quote_test(double price, double bid, double ask)
   return TB_UNK;
 }
 
-inline tbAgg bvc_tick_rule(double price, double lastPrice)
+inline 				tbAgg bvc_tick_rule			(double price, double lastPrice)
 {
   if (lastPrice <= 0.0) return TB_UNK;
   if (price > lastPrice)  return TB_BUY;
@@ -85,7 +85,7 @@ inline tbAgg bvc_tick_rule(double price, double lastPrice)
   return TB_UNK;
 }
 
-inline tbAgg bvc_mid_heuristic(double price, double bid, double ask)
+inline 				tbAgg bvc_mid_heuristic		(double price, double bid, double ask)
 {
   if (bid > 0.0 && ask > 0.0) {
     const double mid = 0.5 * (bid + ask);
@@ -98,7 +98,7 @@ inline tbAgg bvc_mid_heuristic(double price, double bid, double ask)
 // ---------------------------------------------------------------------------
 // Paramètres et état cumulatif
 // ---------------------------------------------------------------------------
-struct BvcParams
+struct 				BvcParams
 {
   // Priorité des tests
   bool   preferQuoteTest   = true;   // true: Quote-Test d'abord
@@ -111,7 +111,7 @@ struct BvcParams
   bool   resetOnNewDay     = true;   // reset dur à l'ouverture d'un nouveau jour
 };
 
-struct BvcState
+struct 				BvcState
 {
   // Cumulatifs
   double cumDelta  = 0.0;
@@ -150,7 +150,7 @@ struct BvcState
 // ---------------------------------------------------------------------------
 // Classification d'un trade isolé à partir de price/size/bid/ask/contexte
 // ---------------------------------------------------------------------------
-inline tbAgg bvc_classify_trade(double price, int size, double bid, double ask, double lastPrice, bool preferQuoteTest)
+inline 				tbAgg bvc_classify_trade	(double price, int size, double bid, double ask, double lastPrice, bool preferQuoteTest)
 {
   if (size <= 0 || price <= 0.0) return TB_UNK;
 
@@ -170,7 +170,7 @@ inline tbAgg bvc_classify_trade(double price, int size, double bid, double ask, 
 }
 
 // Applique le trade au state
-inline void bvc_apply_trade(BvcState& st, double price, int size, double bid, double ask, tbAgg side)
+inline void 		bvc_apply_trade				(BvcState& st, double price, int size, double bid, double ask, tbAgg side)
 {
   if (size <= 0) return;
   if (side == TB_BUY) {
@@ -197,7 +197,7 @@ inline void bvc_apply_trade(BvcState& st, double price, int size, double bid, do
 // ---------------------------------------------------------------------------
 // Lecture Time&Sales depuis Sierra Chart et mise à jour de l'état
 // ---------------------------------------------------------------------------
-inline int bvc_process_time_and_sales(SCStudyInterfaceRef sc, const BvcParams& p, BvcState& st)
+inline int 			bvc_process_time_and_sales	(SCStudyInterfaceRef sc, const BvcParams& p, BvcState& st)
 {
   c_SCTimeAndSalesArray tsArray;
   sc.GetTimeAndSales(tsArray);
@@ -269,7 +269,7 @@ inline int bvc_process_time_and_sales(SCStudyInterfaceRef sc, const BvcParams& p
 //  9: last_ask
 // Retourne le nombre de features écrites.
 // ---------------------------------------------------------------------------
-inline int bvc_features_v1(const BvcState& st, double* out)
+inline int 			bvc_features_v1				(const BvcState& st, double* out)
 {
   if (!out) return 0;
   const double tot = st.cumBuy + st.cumSell;
@@ -292,14 +292,14 @@ inline int bvc_features_v1(const BvcState& st, double* out)
 // ---------------------------------------------------------------------------
 // Utilitaires divers
 // ---------------------------------------------------------------------------
-inline void bvc_soft_reset(BvcState& st)
+inline void 		bvc_soft_reset				(BvcState& st)
 {
   st.cumDelta = st.cumBuy = st.cumSell = 0.0;
   st.runBuy = st.runSell = 0;
   st.nTrades = st.nBuys = st.nSells = 0;
 }
 
-inline void bvc_reset_if_full_recalc(SCStudyInterfaceRef sc, BvcState& st)
+inline void 		bvc_reset_if_full_recalc	(SCStudyInterfaceRef sc, BvcState& st)
 {
   if (sc.IsFullRecalculation)
     st.reset_hard();
