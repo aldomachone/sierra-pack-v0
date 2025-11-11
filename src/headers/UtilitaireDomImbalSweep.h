@@ -31,25 +31,24 @@ namespace du {
 // ---------------------------------------------------------------------------
 // Compat v0 d'origine (préservée)
 // ---------------------------------------------------------------------------
-inline float imbalNearMinusFarPct(const SCStudyInterfaceRef& sc, int levels, int nearN, int midN)
+inline float 	imbalNearMinusFarPct	(const SCStudyInterfaceRef& sc, int levels, int nearN, int midN)
 {
   const auto b = du::sumBands(sc, 1, levels, nearN, midN);
   float n=0,m=0,f=0; du::normalizePct(b.nearBid+b.nearAsk, b.midBid+b.midAsk, b.farBid+b.farAsk, n,m,f);
   return n - f;
 }
 
-inline void duImbalance(const double* qBid,const double* qAsk,int avail,double* obi,double* ratio)
+inline void 	duImbalance				(const double* qBid,const double* qAsk,int avail,double* obi,double* ratio)
 {
   double sb=0, sa=0; for(int i=0;i<avail;++i){ sb+=qBid?qBid[i]:0.0; sa+=qAsk?qAsk[i]:0.0; }
   if(obi)   *obi   = sb - sa;
   if(ratio) *ratio = (sa>1e-12? sb/sa : 0.0);
 }
 
-inline double duImbalBands(double near,double mid,double far,double* score)
-{ double s = 0.60*near + 0.30*mid + 0.10*far; if(score) *score = s; return s; }
+inline double 	duImbalBands			(double near,double mid,double far,double* score){
+	double s = 0.60*near + 0.30*mid + 0.10*far; if(score) *score = s; return s; }
 
-inline bool duSweepDetect(const double* qDelta,int avail,double thrAbs,double thrRel,double* score)
-{
+inline bool 	duSweepDetect			(const double* qDelta,int avail,double thrAbs,double thrRel,double* score){
   double s=0, base=0; for(int i=0;i<avail;++i){ const double d = qDelta? qDelta[i] : 0.0; if(d>0) s += d; base += std::fabs(d); }
   if(score) *score=s; return (s >= thrAbs) || (base>1e-12 && s/base >= thrRel);
 }
@@ -57,9 +56,9 @@ inline bool duSweepDetect(const double* qDelta,int avail,double thrAbs,double th
 // ---------------------------------------------------------------------------
 // v1 — enrichi
 // ---------------------------------------------------------------------------
-struct IsBands { int startNear=0, cntNear=10; int startMid=10, cntMid=20; int startFar=30, cntFar=30; };
+struct 			IsBands { int startNear=0, cntNear=10; int startMid=10, cntMid=20; int startFar=30, cntFar=30; };
 
-struct IsParams
+struct 			IsParams
 {
   // Bandes et poids
   IsBands bands{}; double wNear=0.60, wMid=0.30, wFar=0.10;
@@ -71,9 +70,9 @@ struct IsParams
   int requireFresh=1; int minAvail=10; double spreadMaxTks=4.0;
 };
 
-enum IsPhase:int { IS_IDLE=0, IS_ARMED=1, IS_TRIGGERED=2, IS_COOLDOWN=3 };
+enum 			IsPhase:int { IS_IDLE=0, IS_ARMED=1, IS_TRIGGERED=2, IS_COOLDOWN=3 };
 
-struct IsState
+struct 			IsState
 {
   // OBI par bande
   double obiNear=0, obiMid=0, obiFar=0, obiW=0, obiWEma=0; // Bid-Ask
@@ -94,13 +93,13 @@ struct IsState
 };
 
 // Sommes bornées sur [start..end]
-inline double is_sum(const double* a,int avail,int start,int cnt){ if(!a||cnt<=0) return 0.0; if(start<0) start=0; const int e=start+cnt-1; double s=0; for(int i=start;i<=e && i<avail;++i) s+=a[i]; return s; }
-inline double is_sum_pos(const double* a,int avail,int start,int cnt){ if(!a||cnt<=0) return 0.0; if(start<0) start=0; const int e=start+cnt-1; double s=0; for(int i=start;i<=e && i<avail;++i){ const double x=a[i]; if(x>0) s+=x; } return s; }
+inline double 	is_sum(const double* a,int avail,int start,int cnt){ if(!a||cnt<=0) return 0.0; if(start<0) start=0; const int e=start+cnt-1; double s=0; for(int i=start;i<=e && i<avail;++i) s+=a[i]; return s; }
+inline double 	is_sum_pos(const double* a,int avail,int start,int cnt){ if(!a||cnt<=0) return 0.0; if(start<0) start=0; const int e=start+cnt-1; double s=0; for(int i=start;i<=e && i<avail;++i){ const double x=a[i]; if(x>0) s+=x; } return s; }
 
-inline double is_ema(double prev,double x,double aPct){ const double a=aPct>0.0? aPct/100.0 : 0.0; return prev + a*(x - prev); }
+inline double 	is_ema(double prev,double x,double aPct){ const double a=aPct>0.0? aPct/100.0 : 0.0; return prev + a*(x - prev); }
 
 // Lecture directe DOM, puis calcul OBI par bandes
-inline void is_read_from_sc(const SCStudyInterfaceRef& sc, const IsParams& p, int avail,
+inline void 	is_read_from_sc(const SCStudyInterfaceRef& sc, const IsParams& p, int avail,
                             double& obiNear,double& obiMid,double& obiFar,
                             double& baseNear,double& baseMid,double& baseFar)
 {
@@ -115,7 +114,7 @@ inline void is_read_from_sc(const SCStudyInterfaceRef& sc, const IsParams& p, in
 
 // Mise à jour à partir d’array NOW/PREV pour sweep + imbalance
 // qB/A_now, qB/A_prev = quantités par niveau; dB/dA = Δ disparitions (>0) si fournis.
-inline void is_update_arrays(IsState& st, const IsParams& p,
+inline void 	is_update_arrays(IsState& st, const IsParams& p,
                             const double* qB_now,const double* qA_now,
                             const double* qB_prev,const double* qA_prev,
                             const double* dB,const double* dA,
@@ -152,7 +151,7 @@ inline void is_update_arrays(IsState& st, const IsParams& p,
 }
 
 // Gates simples sur sc
-inline bool is_gates_ok(const SCStudyInterfaceRef& sc, const IsParams& p)
+inline bool 	is_gates_ok(const SCStudyInterfaceRef& sc, const IsParams& p)
 {
   if (p.requireFresh && du::domIsStale(sc)) return false;
   const int avail = sc.GetMarketDepthNumberOfLevels(); if (avail < p.minAvail) return false;
@@ -161,7 +160,7 @@ inline bool is_gates_ok(const SCStudyInterfaceRef& sc, const IsParams& p)
 }
 
 // Étape hystérésis + réfractaire + cooldown. Retourne true si événement.
-inline bool is_hysteresis_step(IsState& st, const IsParams& p, long long nowMs, bool sweepOK)
+inline bool 	is_hysteresis_step(IsState& st, const IsParams& p, long long nowMs, bool sweepOK)
 {
   if (st.phase == IS_COOLDOWN) {
     if (nowMs - st.tTrig >= p.cooldownMs) st.phase = IS_IDLE; else return false;
@@ -184,7 +183,7 @@ inline bool is_hysteresis_step(IsState& st, const IsParams& p, long long nowMs, 
 // 7 baseFar, 8 norm, 9 normEma, 10 swBid, 11 swAsk, 12 swTot,
 // 13 consecOver, 14 consecUnder, 15 phase
 // ---------------------------------------------------------------------------
-inline int is_features_v1(const IsState& st, long long /*nowMs*/, double* out)
+inline int 		is_features_v1(const IsState& st, long long /*nowMs*/, double* out)
 {
   if(!out) return 0;
   out[0]=du::sanitize(st.obiNear); out[1]=du::sanitize(st.obiMid); out[2]=du::sanitize(st.obiFar);

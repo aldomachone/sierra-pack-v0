@@ -1,23 +1,26 @@
-// File: TAPE_ENGINE_v0.cpp
+// ============================================================================
+// Pack v0 — Engine de base (v0)
+// ============================================================================
+#include "sierrachart.h"
 #include "Pack_v0.h"
 
 SCSFExport scsf_TAPE_ENGINE_v0(SCStudyInterfaceRef sc)
 {
-  enum { IN_DtMs=1, IN_HLms }; // 01..02
-  if(sc.SetDefaults){
-    sc.AutoLoop = 0; sc.UpdateAlways = 1; sc.ValueFormat=26; sc.GraphRegion=0; sc.FreeDLL=0;
-    for(int sg=1; sg<=16; ++sg){
-      sc.Subgraph[sg].Name="ENG_TAPE_"+SCString(sg);
-      sc.Subgraph[sg].DrawStyle=DRAWSTYLE_IGNORE;
-      sc.Subgraph[sg].DrawZeros=0;
-      sc.Subgraph[sg].DisplayAsMainPriceGraphValue=0;
-    }
-    sc.Input[IN_DtMs].Name="01. Pas temps (ms)"; sc.Input[IN_DtMs].SetInt(50);
-    sc.Input[IN_HLms].Name="02. Demi-vie (ms)";  sc.Input[IN_HLms].SetInt(250);
-    sc.DisplayStudyInputValues=false; return;
+  int& inited = sc.GetPersistentInt(1); double& emaTPS = sc.GetPersistentDouble(2);
+  if (sc.SetDefaults)
+  {
+    sc.GraphName = "TAPE_ENGINE_v0";
+    sc.AutoLoop = 0; sc.UpdateAlways = 1; sc.GraphRegion = 0; sc.ValueFormat = 26; sc.FreeDLL = 0;
+    sc.MaintainTimeAndSalesData = 1;
+    for (int i=1;i<=16;++i){ sc.Subgraph[i].Name = "SG%02d"; sc.Subgraph[i].DrawStyle = DRAWSTYLE_IGNORE; sc.Subgraph[i].DrawZeros=false; sc.Subgraph[i].DisplayAsMainPriceGraphValue=0; }
+    sc.Input[0].Name="01. EMA % TPS"; sc.Input[0].SetInt(85); sc.Input[0].SetIntLimits(1,99);
+    sc.DrawZeros=false; return;
   }
-
-  // Placeholder minimal: pas de calcul spécifique ici.
-  // Les SG restent à 0 pour ne pas impacter l’échelle.
-  for(int sg=1; sg<=16; ++sg) sc.Subgraph[sg][sc.Index]=0.0f;
+  if (!inited || sc.IsFullRecalculation) { inited=1; emaTPS=0; }
+  c_SCTimeAndSalesArray ts; sc.GetTimeAndSales(ts); if(ts.Size()==0 || sc.ArraySize==0) return;
+  double a=sc.Input[0].GetInt()/100.0;
+  double tEnd=ts[ts.Size()-1].DateTime, tBeg=tEnd - 1/86400.0; // 1s
+  int trades=0; for(int i=ts.Size()-1;i>=0;--i){ if(ts[i].DateTime<tBeg) break; if(ts[i].Type==SC_TS_TRADES) ++trades; }
+  emaTPS = a*trades + (1-a)*emaTPS;
+  sc.Subgraph[1][sc.ArraySize-1]=emaTPS;
 }

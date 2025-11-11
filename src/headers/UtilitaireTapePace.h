@@ -22,27 +22,23 @@ namespace du {
 // -----------------------------------------------------------------------------
 // Compat v0 (inchangé)
 // -----------------------------------------------------------------------------
-inline float pacePerSecBar(const SCStudyInterfaceRef& sc, int idx)
+inline float 	pacePerSecBar		(const SCStudyInterfaceRef& sc, int idx)
 {
   const double vol = (double)sc.UpVolume[idx] + (double)sc.DownVolume[idx];
   const double dt  = sc.SecondsPerBar > 0 ? (double)sc.SecondsPerBar : 1.0;
   return (float)(vol / dt);
 }
 
-inline int interArrivalMs(long long last, long long now) { return (int)(now > last ? (now - last) : 0LL); }
+inline int 		interArrivalMs		(long long last, long long now) 							{ return (int)(now > last ? (now - last) : 0LL); }
 
-inline double tpInterArrivalMs(long long lastTs, long long ts) { return (double)(ts - lastTs); }
+inline double 	tpInterArrivalMs	(long long lastTs, long long ts) 							{ return (double)(ts - lastTs); }
 
-inline double tpPaceEMA(double prev, double dtMs, double alphaPct)
-{ const double a = alphaPct > 0.0 ? (alphaPct / 100.0) : 0.0; return prev + a * (dtMs - prev); }
+inline double 	tpPaceEMA			(double prev, double dtMs, double alphaPct)					{
+	const double a = alphaPct > 0.0 ? (alphaPct / 100.0) : 0.0; return prev + a * (dtMs - prev); }
 
-inline double tpRate(int ctr, double dtMs)
-{ return dtMs > 0.0 ? (double)ctr * 1000.0 / dtMs : 0.0; }
+inline double 	tpRate				(int ctr, double dtMs)										{ return dtMs > 0.0 ? (double)ctr * 1000.0 / dtMs : 0.0; }
 
-// -----------------------------------------------------------------------------
-// v1 — enrichi
-// -----------------------------------------------------------------------------
-struct TpParams
+struct 			TpParams
 {
   int     winM          = 16;    // fenêtre pour stats Δt
   double  alphaPct      = 50.0;  // EMA Δt et pace
@@ -52,7 +48,7 @@ struct TpParams
   double  clampDtMaxMs  = 5000;  // clamp Δt max
 };
 
-struct TpState
+struct 			TpState
 {
   // Temps et Δt
   long long lastTsMs   = 0;      // dernier timestamp ms vu
@@ -78,13 +74,12 @@ struct TpState
 };
 
 // Clamp utilitaire
-inline double tp_clamp(double x, double lo, double hi)
-{ if (x < lo) return lo; if (x > hi) return hi; return x; }
+inline double 	tp_clamp			(double x, double lo, double hi)							{ if (x < lo) return lo; if (x > hi) return hi; return x; }
 
 // Mise à jour « arrival » à chaque trade/impression.
 // nowMs : horodatage ms monotone (du::toMs(sc.CurrentSystemDateTime) recommandé)
 // side  : +1 pour UP, −1 pour DN, 0 si inconnu
-inline void tp_update_arrival(TpState& st, const TpParams& p, long long nowMs, int side)
+inline void 	tp_update_arrival	(TpState& st, const TpParams& p, long long nowMs, int side)
 {
   if (st.lastTsMs <= 0) { st.lastTsMs = nowMs; st.dtMs = 0.0; return; }
 
@@ -118,7 +113,7 @@ inline void tp_update_arrival(TpState& st, const TpParams& p, long long nowMs, i
 }
 
 // Stats dérivées
-inline void tp_stats(const TpState& st, double& mean, double& std, double& cv)
+inline void 	tp_stats			(const TpState& st, double& mean, double& std, double& cv)
 {
   if (st.dtCnt <= 0) { mean=0; std=0; cv=0; return; }
   mean = st.dtSum / st.dtCnt; const double var = st.dtCnt>0 ? (st.dtSq / st.dtCnt) - mean*mean : 0.0; std = var>0? std::sqrt(var) : 0.0; cv = (mean>0? std/mean : 0.0);
@@ -127,7 +122,7 @@ inline void tp_stats(const TpState& st, double& mean, double& std, double& cv)
 // Features MLP v1 (16)
 // 0 dt_ms, 1 dt_ema, 2 pace_ema, 3 dt_min, 4 dt_max, 5 dt_mean, 6 dt_std, 7 dt_cv,
 // 8 is_burst, 9 consec, 10 is_run, 11 up, 12 dn, 13 up_minus_dn, 14 rate_est, 15 rate_inv_dt
-inline int tp_features_v1(const TpState& st, const TpParams& p, double* out)
+inline int 		tp_features_v1		(const TpState& st, const TpParams& p, double* out)
 {
   if (!out) return 0; double mean=0,std=0,cv=0; tp_stats(st, mean, std, cv);
   out[0]=du::sanitize(st.dtMs);

@@ -31,27 +31,27 @@ namespace du {
 // ---------------------------------------------------------------------------
 // Compat v0 — inchangé
 // ---------------------------------------------------------------------------
-inline float momPrice1(const SCStudyInterfaceRef& sc, int i)
+inline float 	momPrice1				(const SCStudyInterfaceRef& sc, int i)
 {
   if (i <= 0) return 0.0f; return (float)(sc.Close[i] - sc.Close[i-1]);
 }
 
-inline void duMomentumNear(const double* now, const double* prev, int avail, double alphaPct, double* outScore)
+inline void 	duMomentumNear			(const double* now, const double* prev, int avail, double alphaPct, double* outScore)
 {
   double s = 0.0; const int N = avail < 0 ? 0 : avail; for (int i=0; i<N; ++i) { const double d = (now?now[i]:0.0) - (prev?prev[i]:0.0); s += d; }
   if (outScore) *outScore = s * (alphaPct/100.0);
 }
 
-inline double duMomentumSigned(double bidMom, double askMom) { return bidMom - askMom; }
+inline double 	duMomentumSigned		(double bidMom, double askMom) { return bidMom - askMom; }
 
-inline bool duMomentumGate(double score, double p1, double p2, int /*warmupN*/) { return score > p1 || score > p2; }
+inline bool 	duMomentumGate			(double score, double p1, double p2, int /*warmupN*/) { return score > p1 || score > p2; }
 
 // ---------------------------------------------------------------------------
 // v1 — enrichi
 // ---------------------------------------------------------------------------
-struct DmBands { int startNear=0, cntNear=10; int startMid=10, cntMid=20; int startFar=30, cntFar=30; }; // jusqu’à 60
+struct 			DmBands { int startNear=0, cntNear=10; int startMid=10, cntMid=20; int startFar=30, cntFar=30; }; // jusqu’à 60
 
-struct DmParams
+struct 			DmParams
 {
   DmBands bands{};          // partition profondeur
   double  wNear=0.60, wMid=0.30, wFar=0.10; // pondérations
@@ -62,7 +62,7 @@ struct DmParams
   int     useZScore=1;      // 0/1 z‑score rolling
 };
 
-struct DmStats // accumulateurs pour z‑score rolling simple (une voie)
+struct 			DmStats // accumulateurs pour z‑score rolling simple (une voie)
 {
   double mean=0.0, m2=0.0; int n=0;
   inline void reset(){ mean=0.0; m2=0.0; n=0; }
@@ -70,9 +70,9 @@ struct DmStats // accumulateurs pour z‑score rolling simple (une voie)
   inline double std() const { return (n>1? std::sqrt(std::max(0.0, m2/(n-1))) : 0.0); }
 };
 
-enum DmPhase:int { DM_IDLE=0, DM_ARMED=1, DM_TRIGGERED=2, DM_COOLDOWN=3 };
+enum 			DmPhase:int { DM_IDLE=0, DM_ARMED=1, DM_TRIGGERED=2, DM_COOLDOWN=3 };
 
-struct DmState
+struct 			DmState
 {
   // Scores bruts
   double near=0, mid=0, far=0;         // delta quantités par bande (Bid–Ask)
@@ -96,7 +96,7 @@ struct DmState
 };
 
 // Somme d’un intervalle borné [start .. start+count-1] pour (now-prev)
-inline double dm_band_delta(const double* now, const double* prev, int avail, int start, int count)
+inline double 	dm_band_delta			(const double* now, const double* prev, int avail, int start, int count)
 {
   if (!now && !prev) return 0.0; if (count<=0) return 0.0; if (start<0) start=0;
   const int end = start + count - 1; double s=0.0; for (int i=start; i<=end && i<avail; ++i) s += (now?now[i]:0.0) - (prev?prev[i]:0.0);
@@ -104,19 +104,19 @@ inline double dm_band_delta(const double* now, const double* prev, int avail, in
 }
 
 // Somme des bases (Bid+Ask) sur une bande. L’appelant fournit base déjà lue si besoin.
-inline double dm_band_base(const double* nowB, const double* nowA, int avail, int start, int count)
+inline double 	dm_band_base			(const double* nowB, const double* nowA, int avail, int start, int count)
 {
   if ((!nowB && !nowA) || count<=0) return 0.0; if (start<0) start=0; const int end=start+count-1; double s=0.0;
   for (int i=start; i<=end && i<avail; ++i) s += (nowB?nowB[i]:0.0) + (nowA?nowA[i]:0.0);
   return s;
 }
 
-inline double dm_ema(double prev, double x, double aPct){ const double a = aPct>0.0? aPct/100.0 : 0.0; return prev + a*(x - prev); }
+inline double 	dm_ema					(double prev, double x, double aPct){ const double a = aPct>0.0? aPct/100.0 : 0.0; return prev + a*(x - prev); }
 
 // Mise à jour à partir d’instantanés Bid/Ask (now vs prev) — entièrement arithmétique
 // nowB/A, prevB/A: tableaux de quantités >=0 ; avail: niveaux valides
 // Retourne le score signé normalisé (normEma).
-inline double dm_update_from_arrays(DmState& st, const DmParams& p,
+inline double 	dm_update_from_arrays	(DmState& st, const DmParams& p,
                                     const double* nowB, const double* nowA,
                                     const double* prevB, const double* prevA,
                                     int avail, long long nowMs)
@@ -155,7 +155,7 @@ inline double dm_update_from_arrays(DmState& st, const DmParams& p,
 }
 
 // Hystérésis + réfractaire + cooldown. Retourne true si « momentum validé » sur CE tick.
-inline bool dm_hysteresis_step(DmState& st, const DmParams& p, long long nowMs)
+inline bool 	dm_hysteresis_step		(DmState& st, const DmParams& p, long long nowMs)
 {
   // Cooldown
   if (st.phase == DM_COOLDOWN) {
@@ -178,7 +178,7 @@ inline bool dm_hysteresis_step(DmState& st, const DmParams& p, long long nowMs)
 // 7 baseFar, 8 norm, 9 normEma, 10 z, 11 consecOver, 12 consecUnder,
 // 13 phase, 14 dt_since_trig_ms, 15 avail_hint
 // ---------------------------------------------------------------------------
-inline int dm_features_v1(const DmState& st, int avail, long long nowMs, double* out)
+inline int 		dm_features_v1			(const DmState& st, int avail, long long nowMs, double* out)
 {
   if (!out) return 0; const long long dtT = (st.tTrig>0? nowMs - st.tTrig : 0);
   out[0]=du::sanitize(st.near); out[1]=du::sanitize(st.mid); out[2]=du::sanitize(st.far);
