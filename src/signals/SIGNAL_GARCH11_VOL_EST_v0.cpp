@@ -1,20 +1,20 @@
 #include "sierrachart.h"
   SCDLLName("PACK_SIGNALS_V0")
 
-  SCSFExport scsf_SIGNAL_DOM_MOMENTUM_v0(SCStudyInterfaceRef sc)
+  SCSFExport scsf_SIGNAL_GARCH11_VOL_EST_v0(SCStudyInterfaceRef sc)
   {
     SCSubgraphRef SG = sc.Subgraph[0];
 
     if (sc.SetDefaults)
     {
-      sc.GraphName = "DOM Momentum v0";
+      sc.GraphName = "GARCH(1,1) σ v0";
       sc.AutoLoop = 0;
       sc.UpdateAlways = 1;
       sc.GraphRegion = 0;
       sc.ValueFormat = 26;
       sc.FreeDLL = 0;
 
-      SG.Name = "DOM Momentum v0";
+      SG.Name = "GARCH(1,1) σ v0";
       SG.DrawStyle = DRAWSTYLE_TRANSPARENT_CIRCLE_VARIABLE_SIZE;
       SG.PrimaryColor = RGB(255,255,255);
       SG.DrawZeros = 0;
@@ -24,20 +24,22 @@
       return;
     }
 
-SCInputRef In_01_N = sc.Input[0]; In_01_N.Name = "01. N"; In_01_N.SetInt(8); // Fenêtre momentum
-SCInputRef In_02_ATR = sc.Input[1]; In_02_ATR.Name = "02. ATR"; In_02_ATR.SetInt(14); // Fenêtre ATR
+SCInputRef In_01_omega = sc.Input[0]; In_01_omega.Name = "01. omega"; In_01_omega.SetFloat(1e-06); // Constante
+SCInputRef In_02_alpha = sc.Input[1]; In_02_alpha.Name = "02. alpha"; In_02_alpha.SetFloat(0.05); // Poids choc
+SCInputRef In_03_beta = sc.Input[2]; In_03_beta.Name = "03. beta"; In_03_beta.SetFloat(0.9); // Persistance
 
     const int last = sc.ArraySize - 1;
     if (last < 2) return;
 
 
-// Momentum de prix normalisé par ATR court
-int n = In_01_N.GetInt(); if (n<2) n=8;
-int i0 = last-n; if (i0<0) i0=0;
-double roc = sc.Close[last]-sc.Close[i0];
-double atr=0.0; int m=In_02_ATR.GetInt(); if (m<2) m=14;
-for (int i = (last-m+1>1?last-m+1:1); i<=last; ++i) atr += fabs((double)sc.High[i]- (double)sc.Low[i]);
-atr/=m; double Result = (atr>0.0)? roc/atr : 0.0;
+double omega=In_01_omega.GetFloat();
+double alpha=In_02_alpha.GetFloat();
+double beta =In_03_beta.GetFloat();
+static double s2=0.0;
+double r = (double)sc.Close[last]- (double)sc.Close[last-1];
+if (s2<=0.0) s2 = r*r;
+s2 = omega + alpha*(r*r) + beta*s2;
+double Result = sqrt(fabs(s2));
 
 
     // Efface l'historique sauf la dernière barre

@@ -1,20 +1,20 @@
 #include "sierrachart.h"
   SCDLLName("PACK_SIGNALS_V0")
 
-  SCSFExport scsf_SIGNAL_DOM_MOMENTUM_v0(SCStudyInterfaceRef sc)
+  SCSFExport scsf_SIGNAL_VARIANCE_RATIO_v0(SCStudyInterfaceRef sc)
   {
     SCSubgraphRef SG = sc.Subgraph[0];
 
     if (sc.SetDefaults)
     {
-      sc.GraphName = "DOM Momentum v0";
+      sc.GraphName = "Variance Ratio v0";
       sc.AutoLoop = 0;
       sc.UpdateAlways = 1;
       sc.GraphRegion = 0;
       sc.ValueFormat = 26;
       sc.FreeDLL = 0;
 
-      SG.Name = "DOM Momentum v0";
+      SG.Name = "Variance Ratio v0";
       SG.DrawStyle = DRAWSTYLE_TRANSPARENT_CIRCLE_VARIABLE_SIZE;
       SG.PrimaryColor = RGB(255,255,255);
       SG.DrawZeros = 0;
@@ -24,20 +24,21 @@
       return;
     }
 
-SCInputRef In_01_N = sc.Input[0]; In_01_N.Name = "01. N"; In_01_N.SetInt(8); // Fenêtre momentum
-SCInputRef In_02_ATR = sc.Input[1]; In_02_ATR.Name = "02. ATR"; In_02_ATR.SetInt(14); // Fenêtre ATR
+SCInputRef In_01_q = sc.Input[0]; In_01_q.Name = "01. q"; In_01_q.SetInt(4); // Agrégation
+SCInputRef In_02_N = sc.Input[1]; In_02_N.Name = "02. N"; In_02_N.SetInt(64); // Fenêtre totale
 
     const int last = sc.ArraySize - 1;
     if (last < 2) return;
 
 
-// Momentum de prix normalisé par ATR court
-int n = In_01_N.GetInt(); if (n<2) n=8;
-int i0 = last-n; if (i0<0) i0=0;
-double roc = sc.Close[last]-sc.Close[i0];
-double atr=0.0; int m=In_02_ATR.GetInt(); if (m<2) m=14;
-for (int i = (last-m+1>1?last-m+1:1); i<=last; ++i) atr += fabs((double)sc.High[i]- (double)sc.Low[i]);
-atr/=m; double Result = (atr>0.0)? roc/atr : 0.0;
+int q=In_01_q.GetInt(); if (q<2) q=4;
+int n=In_02_N.GetInt(); if (n<q+1) n=q+1;
+int s=last-n+1; if (s<q) s=q;
+double num=0.0,den=0.0;
+for(int i=s;i<=last;++i){ double r=sc.Close[i]-sc.Close[i-1]; den += r*r; }
+for(int i=s;i<=last;i+=q){ double rq=sc.Close[i]-sc.Close[i-q]; num += rq*rq; }
+double VR = (q*den>0.0)? num/(q*den) : 0.0;
+double Result = VR - 1.0;
 
 
     // Efface l'historique sauf la dernière barre

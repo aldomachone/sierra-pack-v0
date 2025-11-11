@@ -18,52 +18,52 @@
 // - Les conversions SCDateTime se font via cast double * 86'400'000.
 // ============================================================================
 
-namespace du {
+namespace du 																																		{
 
 // ---------------------------------------------------------------------------
 // Constantes et conversions de base
 // ---------------------------------------------------------------------------
-constexpr double kDayToMs = 24.0 * 3600.0 * 1000.0;
-constexpr double kSecToMs = 1000.0;
+constexpr double 	kDayToMs = 24.0 * 3600.0 * 1000.0																								;
+constexpr double 	kSecToMs = 1000.0																												;
 
 // Convertit un SCDateTime (jour julien fractionnaire Sierra) en millisecondes.
-inline long long toMs(SCDateTime t) {
+inline long long 	toMs					(SCDateTime t) 																							{
   const double ms = static_cast<double>(t) * kDayToMs;
   return static_cast<long long>(ms + 0.5);
 }
 
 // ms depuis epoch selon l’horloge système (Sierra fournit CurrentSystemDateTimeMS).
-inline long long nowMs(const SCStudyInterfaceRef& sc) {
+inline long long 	nowMs					(const SCStudyInterfaceRef& sc) 																		{
   return toMs(sc.CurrentSystemDateTimeMS);
 }
 
 // ms de la barre idx selon l’horloge du chart.
-inline long long barTimeMs(const SCStudyInterfaceRef& sc, int idx) {
+inline long long 	barTimeMs				(const SCStudyInterfaceRef& sc, int idx) 																{
   if (idx < 0) idx = 0;
   if (idx >= sc.ArraySize) idx = sc.ArraySize ? sc.ArraySize - 1 : 0;
   return toMs(sc.BaseDateTimeIn[idx]);
 }
 // Nanosecondes système (non dispo nativement dans ACSIL). Placeholder neutre.
-inline long long duNowNs(SCStudyInterfaceRef) { return 0; }
+inline long long 	duNowNs					(SCStudyInterfaceRef) 	{ return 0; }
 
 // ---------------------------------------------------------------------------
 // Jours / sessions
 // ---------------------------------------------------------------------------
 
 // Vrai si la barre courante est dans une nouvelle journée (chart clock).
-inline bool newTradingDay(const SCStudyInterfaceRef& sc, int& lastYmd) {
+inline bool 		newTradingDay			(const SCStudyInterfaceRef& sc, int& lastYmd) 															{
   const int ymd = sc.BaseDateTimeIn[sc.Index].GetDateYMD();
   if (ymd != lastYmd) { lastYmd = ymd; return true; }
   return false;
 }
 
 // Variante “à la volée” sur la dernière barre connue.
-inline bool duIsNewTradingDay(SCStudyInterfaceRef sc, int lastDateYMD) {
+inline bool 		duIsNewTradingDay		(SCStudyInterfaceRef sc, int lastDateYMD) 																{
   return sc.BaseDateTimeIn[sc.ArraySize - 1].GetDateYMD() != lastDateYMD;
 }
 
 // Retourne l’index de la première barre de la journée courante. O(N backscan) borné.
-inline int firstIndexOfToday(const SCStudyInterfaceRef& sc) {
+inline int 			firstIndexOfToday		(const SCStudyInterfaceRef& sc) 																		{
   const int i0  = sc.Index;
   const int ymd = sc.BaseDateTimeIn[i0].GetDateYMD();
   int i = i0;
@@ -73,7 +73,7 @@ inline int firstIndexOfToday(const SCStudyInterfaceRef& sc) {
 
 // Durée écoulée de la session courante en ms, mesurée entre la première barre du jour
 // et l’horloge “chart” de la barre courante.
-inline long long duSessionElapsedMs(SCStudyInterfaceRef sc) {
+inline long long 	duSessionElapsedMs		(SCStudyInterfaceRef sc) 																				{
   if (sc.ArraySize <= 0) return 0;
   const int        iStart = firstIndexOfToday(sc);
   const long long  tStart = barTimeMs(sc, iStart);
@@ -86,27 +86,27 @@ inline long long duSessionElapsedMs(SCStudyInterfaceRef sc) {
 // ---------------------------------------------------------------------------
 
 // Clamp simple d’un delta de latence en ms.
-inline int jitterClampMs(int dtMs, int maxJitterMs) {
+inline int 			jitterClampMs			(int dtMs, int maxJitterMs) 																			{
   if (dtMs < 0) return 0;
   if (dtMs > maxJitterMs) return maxJitterMs;
   return dtMs;
 }
 
 // Clamp “saut max” entre deux timestamps ms.
-inline long long duJitterClamp(long long prevMs, long long curMs, long long maxJumpMs) {
+inline long long 	duJitterClamp			(long long prevMs, long long curMs, long long maxJumpMs)												{
   if (curMs - prevMs >  maxJumpMs) return prevMs + maxJumpMs;
   if (prevMs - curMs >  maxJumpMs) return prevMs - maxJumpMs;
   return curMs;
 }
 
 // Template clamp générique.
-template <typename T>
-inline T duClamp(T v, T lo, T hi) {
+template 			<typename T>
+inline T 			duClamp					(T v, T lo, T hi) 																						{
   return v < lo ? lo : (v > hi ? hi : v);
 }
 
 // Différence ms sûre, non-négative.
-inline long long duSafeDiffMs(long long newerMs, long long olderMs) {
+inline long long 	duSafeDiffMs			(long long newerMs, long long olderMs) 																	{
   return newerMs > olderMs ? (newerMs - olderMs) : 0LL;
 }
 
@@ -118,7 +118,7 @@ inline long long duSafeDiffMs(long long newerMs, long long olderMs) {
 // - Si SecondsPerBar > 0, on l’utilise directement.
 // - Sinon on approxime via la différence temporelle des deux dernières barres.
 // - Fallback = N * 1 s.
-inline double secFromBars(const SCStudyInterfaceRef& sc, int bars) {
+inline double 		secFromBars				(const SCStudyInterfaceRef& sc, int bars) 																{
   if (bars <= 0) return 0.0;
   if (sc.SecondsPerBar > 0)
     return static_cast<double>(bars) * static_cast<double>(sc.SecondsPerBar);
@@ -140,7 +140,7 @@ inline double secFromBars(const SCStudyInterfaceRef& sc, int bars) {
 
 // Estime l’écart horloge système vs horloge chart en secondes.
 // Signé : positif si système “en avance” vs chart.
-inline double duClockSkewEstimate(SCStudyInterfaceRef sc, long long chartNowMs) {
+inline double 		duClockSkewEstimate		(SCStudyInterfaceRef sc, long long chartNowMs) 															{
   const long long sysMs  = nowMs(sc);
   const long long skewMs = static_cast<long long>(sysMs) - static_cast<long long>(chartNowMs);
   return static_cast<double>(skewMs) / kSecToMs;
@@ -156,7 +156,7 @@ inline double duClockSkewEstimate(SCStudyInterfaceRef sc, long long chartNowMs) 
 // - minGapMs   : écart minimal entre deux triggers
 // - state      : compteur d’événements déclenchés
 // Retourne true si un déclenchement est autorisé et met à jour lastFireMs + state.
-inline bool duDebounceMs(long long& lastFireMs, long long nowMsVal, long long minGapMs, int& state) {
+inline bool 		duDebounceMs			(long long& lastFireMs, long long nowMsVal, long long minGapMs, int& state) 							{
   if (minGapMs <= 0) { lastFireMs = nowMsVal; ++state; return true; }
   const long long dt = duSafeDiffMs(nowMsVal, lastFireMs);
   if (dt < minGapMs) return false;
@@ -165,7 +165,7 @@ inline bool duDebounceMs(long long& lastFireMs, long long nowMsVal, long long mi
 
 // Variante compatible avec signature initiale “state only” :
 // - Stocke le dernier fire dans un PersistentInt64 indexé par l’appelant.
-inline bool duDebounceMs_Persist(SCStudyInterfaceRef sc, int persistIdxForLastMs, int& state, long long nowMsVal, long long minGapMs) {
+inline bool			duDebounceMs_Persist	(SCStudyInterfaceRef sc, int persistIdxForLastMs, int& state, long long nowMsVal, long long minGapMs)	{
   long long& lastMs = sc.GetPersistentInt64(persistIdxForLastMs);
   return duDebounceMs(lastMs, nowMsVal, minGapMs, state);
 }
@@ -175,19 +175,19 @@ inline bool duDebounceMs_Persist(SCStudyInterfaceRef sc, int persistIdxForLastMs
 // ---------------------------------------------------------------------------
 
 // Vrai une fois par nouvelle barre. lastIndex est fourni par l’appelant.
-inline bool duIsNewBar(const SCStudyInterfaceRef& sc, int& lastIndex) {
+inline bool 		duIsNewBar				(const SCStudyInterfaceRef& sc, int& lastIndex) 														{
   if (sc.Index != lastIndex) { lastIndex = sc.Index; return true; }
   return false;
 }
 
 // Proxy pratique sur le flag plateforme.
-inline bool duIsFullRecalculation(const SCStudyInterfaceRef& sc) {
+inline bool 		duIsFullRecalculation	(const SCStudyInterfaceRef& sc) 																		{
   return sc.IsFullRecalculation;
 }
 
 // Incrémente avec saturation [lo, hi].
-template <typename T>
-inline void duSaturatingAdd(T& v, T delta, T lo, T hi) {
+template 			<typename T>
+inline void 		duSaturatingAdd			(T& v, T delta, T lo, T hi) 																			{
   if (delta > 0 && v > hi - delta) { v = hi; return; }
   if (delta < 0 && v < lo - delta) { v = lo; return; }
   v += delta;

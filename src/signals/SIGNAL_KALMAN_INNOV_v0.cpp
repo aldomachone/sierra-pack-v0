@@ -1,20 +1,20 @@
 #include "sierrachart.h"
   SCDLLName("PACK_SIGNALS_V0")
 
-  SCSFExport scsf_SIGNAL_DOM_MOMENTUM_v0(SCStudyInterfaceRef sc)
+  SCSFExport scsf_SIGNAL_KALMAN_INNOV_v0(SCStudyInterfaceRef sc)
   {
     SCSubgraphRef SG = sc.Subgraph[0];
 
     if (sc.SetDefaults)
     {
-      sc.GraphName = "DOM Momentum v0";
+      sc.GraphName = "Kalman Innovation v0";
       sc.AutoLoop = 0;
       sc.UpdateAlways = 1;
       sc.GraphRegion = 0;
       sc.ValueFormat = 26;
       sc.FreeDLL = 0;
 
-      SG.Name = "DOM Momentum v0";
+      SG.Name = "Kalman Innovation v0";
       SG.DrawStyle = DRAWSTYLE_TRANSPARENT_CIRCLE_VARIABLE_SIZE;
       SG.PrimaryColor = RGB(255,255,255);
       SG.DrawZeros = 0;
@@ -24,20 +24,27 @@
       return;
     }
 
-SCInputRef In_01_N = sc.Input[0]; In_01_N.Name = "01. N"; In_01_N.SetInt(8); // Fenêtre momentum
-SCInputRef In_02_ATR = sc.Input[1]; In_02_ATR.Name = "02. ATR"; In_02_ATR.SetInt(14); // Fenêtre ATR
+SCInputRef In_01_Q = sc.Input[0]; In_01_Q.Name = "01. Q"; In_01_Q.SetFloat(1e-05); // Bruit de processus
+SCInputRef In_02_R = sc.Input[1]; In_02_R.Name = "02. R"; In_02_R.SetFloat(0.001); // Bruit de mesure
 
     const int last = sc.ArraySize - 1;
     if (last < 2) return;
 
 
-// Momentum de prix normalisé par ATR court
-int n = In_01_N.GetInt(); if (n<2) n=8;
-int i0 = last-n; if (i0<0) i0=0;
-double roc = sc.Close[last]-sc.Close[i0];
-double atr=0.0; int m=In_02_ATR.GetInt(); if (m<2) m=14;
-for (int i = (last-m+1>1?last-m+1:1); i<=last; ++i) atr += fabs((double)sc.High[i]- (double)sc.Low[i]);
-atr/=m; double Result = (atr>0.0)? roc/atr : 0.0;
+// Kalman 1D: état = prix, innovation = observation - estimate
+double q = In_01_Q.GetFloat(); if (q<=0.0) q=1e-5;
+double r = In_02_R.GetFloat(); if (r<=0.0) r=1e-3;
+static double x=0.0, P=1.0;
+if (sc.UpdateStartIndex==0){ x=sc.Close[0]; P=1.0; }
+// Predict
+double x_pred = x; double P_pred = P + q;
+// Update
+double z = sc.Close[last];
+double K = P_pred / (P_pred + r);
+x = x_pred + K*(z - x_pred);
+P = (1.0 - K)*P_pred;
+double innovation = z - x;
+double Result = innovation / (sqrt(P + 1e-12));
 
 
     // Efface l'historique sauf la dernière barre
