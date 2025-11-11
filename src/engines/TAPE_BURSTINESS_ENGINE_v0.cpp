@@ -4,10 +4,10 @@
 #include "sierrachart.h"
 #include "Pack_v0.h"
 
-SCSFExport scsf_PRF_SLOPE_ENGINE_v0(SCStudyInterfaceRef sc)
+SCSFExport scsf_TAPE_BURSTINESS_ENGINE_v0(SCStudyInterfaceRef sc)
 {
   if(sc.SetDefaults){
-    sc.GraphName="PRF_SLOPE_ENGINE_v0"; sc.AutoLoop=0; sc.UpdateAlways=0; sc.GraphRegion=0; sc.ValueFormat=26; sc.FreeDLL=0;
+    sc.GraphName="TAPE_BURSTINESS_ENGINE_v0"; sc.AutoLoop=0; sc.UpdateAlways=1; sc.GraphRegion=0; sc.ValueFormat=26; sc.MaintainTimeAndSalesData=1; sc.FreeDLL=0;
     sc.Subgraph[1].Name = "SG01";
     sc.Subgraph[1].DrawStyle = DRAWSTYLE_IGNORE;
     sc.Subgraph[1].DrawZeros = false;
@@ -24,12 +24,14 @@ SCSFExport scsf_PRF_SLOPE_ENGINE_v0(SCStudyInterfaceRef sc)
     sc.Subgraph[4].DrawStyle = DRAWSTYLE_IGNORE;
     sc.Subgraph[4].DrawZeros = false;
     sc.Subgraph[4].DisplayAsMainPriceGraphValue = 0;
-    sc.Input[0].Name="01. Période"; sc.Input[0].SetInt(20);
+    sc.Input[0].Name="01. Fenêtre ms"; sc.Input[0].SetInt(1000);
     sc.DrawZeros=false; return;
   }
-  if(sc.ArraySize<=1) return; int idx=sc.ArraySize-1; int N=sc.Input[0].GetInt(); int s=idx-N; if(s<0) s=0;
-  double x=0,y=0,xx=0,xy=0; int n=0;
-  for(int i=s;i<=idx;++i){ double t=i-s; x+=t; y+=sc.Close[i]; xx+=t*t; xy+=t*sc.Close[i]; ++n; }
-  double den=n*xx - x*x; double slope=(den!=0? (n*xy - x*y)/den:0.0);
-  sc.Subgraph[1][idx]=slope;
+  c_SCTimeAndSalesArray ts; sc.GetTimeAndSales(ts); if(ts.Size()<3 || sc.ArraySize==0) return;
+  int win=sc.Input[0].GetInt(); double tEnd=ts[ts.Size()-1].DateTime, tBeg=tEnd-win/86400000.0;
+  double last=-1, mean=0, s2=0; int n=0;
+  for(int i=ts.Size()-1;i>=0;--i){ const auto& e=ts[i]; if(e.DateTime<tBeg) break; if(e.Type!=SC_TS_TRADES) continue; if(last>0){ double dt=(last-e.DateTime)*86400000.0; ++n; double del=dt-mean; mean+=del/n; s2+=del*(dt-mean); } last=e.DateTime; }
+  if(n<2) return;
+  double sd=sqrt(s2/(n-1)); double burst=(mean>0? sd/mean:0.0);
+  sc.Subgraph[1][sc.ArraySize-1]=burst;
 }

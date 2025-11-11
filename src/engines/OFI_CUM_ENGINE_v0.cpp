@@ -4,10 +4,11 @@
 #include "sierrachart.h"
 #include "Pack_v0.h"
 
-SCSFExport scsf_PRF_SLOPE_ENGINE_v0(SCStudyInterfaceRef sc)
+SCSFExport scsf_OFI_CUM_ENGINE_v0(SCStudyInterfaceRef sc)
 {
+  double& pb=sc.GetPersistentDouble(1); double& pa=sc.GetPersistentDouble(2); static double cum=0;
   if(sc.SetDefaults){
-    sc.GraphName="PRF_SLOPE_ENGINE_v0"; sc.AutoLoop=0; sc.UpdateAlways=0; sc.GraphRegion=0; sc.ValueFormat=26; sc.FreeDLL=0;
+    sc.GraphName="OFI_CUM_ENGINE_v0"; sc.AutoLoop=0; sc.UpdateAlways=1; sc.GraphRegion=0; sc.ValueFormat=26; sc.UsesMarketDepthData=1; sc.FreeDLL=0;
     sc.Subgraph[1].Name = "SG01";
     sc.Subgraph[1].DrawStyle = DRAWSTYLE_IGNORE;
     sc.Subgraph[1].DrawZeros = false;
@@ -24,12 +25,15 @@ SCSFExport scsf_PRF_SLOPE_ENGINE_v0(SCStudyInterfaceRef sc)
     sc.Subgraph[4].DrawStyle = DRAWSTYLE_IGNORE;
     sc.Subgraph[4].DrawZeros = false;
     sc.Subgraph[4].DisplayAsMainPriceGraphValue = 0;
-    sc.Input[0].Name="01. Période"; sc.Input[0].SetInt(20);
+    sc.Input[0].Name="01. Near niveaux"; sc.Input[0].SetInt(10);
+    sc.Input[1].Name="02. Reset quotidien"; sc.Input[1].SetYesNo(0);
     sc.DrawZeros=false; return;
   }
-  if(sc.ArraySize<=1) return; int idx=sc.ArraySize-1; int N=sc.Input[0].GetInt(); int s=idx-N; if(s<0) s=0;
-  double x=0,y=0,xx=0,xy=0; int n=0;
-  for(int i=s;i<=idx;++i){ double t=i-s; x+=t; y+=sc.Close[i]; xx+=t*t; xy+=t*sc.Close[i]; ++n; }
-  double den=n*xx - x*x; double slope=(den!=0? (n*xy - x*y)/den:0.0);
-  sc.Subgraph[1][idx]=slope;
+  if(sc.IsFullRecalculation || (sc.Input[1].GetYesNo() && sc.Index==0)) cum=0;
+  s_MarketDepthEntry md{}; int N=sc.Input[0].GetInt(); double b=0,aQ=0;
+  for(int i=0;i<sc.GetBidMarketDepthNumberOfLevels() && i<N;++i){ sc.GetBidMarketDepthEntryAtLevel(md,i); b+=md.Quantity; }
+  for(int i=0;i<sc.GetAskMarketDepthNumberOfLevels() && i<N;++i){ sc.GetAskMarketDepthEntryAtLevel(md,i); aQ+=md.Quantity; }
+  if(sc.Index==0){ pb=b; pa=aQ; }
+  double ofi=(b-pb)-(aQ-pa); pb=b; pa=aQ; cum+=ofi;
+  sc.Subgraph[1][sc.ArraySize-1]=cum;
 }
