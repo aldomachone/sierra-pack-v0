@@ -5,14 +5,13 @@
 #include "Pack_v0.h"
 
 
-SCSFExport scsf_PRF_ENGINE_v0(SCStudyInterfaceRef sc)
+SCSFExport scsf_MTF_ENGINE_v0(SCStudyInterfaceRef sc)
 {
-  int& inited  = sc.GetPersistentInt(1);
-  double& emaResp = sc.GetPersistentDouble(2);
+  int& inited = sc.GetPersistentInt(1);
 
   if (sc.SetDefaults)
   {
-    sc.GraphName = "PRF_ENGINE_v0";
+    sc.GraphName = "MTF_ENGINE_v0";
     sc.AutoLoop = 0;
     sc.UpdateAlways = 0;
     sc.GraphRegion = 0;
@@ -52,24 +51,19 @@ SCSFExport scsf_PRF_ENGINE_v0(SCStudyInterfaceRef sc)
     sc.Subgraph[8].DrawZeros = false;
     sc.Subgraph[8].DisplayAsMainPriceGraphValue = 0;
 
-    sc.Input[0].Name = "01. Horizon barres";
-    sc.Input[0].SetInt(5); sc.Input[0].SetIntLimits(1, 1000);
-
-    sc.Input[1].Name = "02. EMA %";
-    sc.Input[1].SetInt(80); sc.Input[1].SetIntLimits(1, 99);
+    sc.Input[0].Name = "01. Période HTF (barres)";
+    sc.Input[0].SetInt(5); sc.Input[0].SetIntLimits(1, 10000);
 
     sc.DrawZeros = false;
     return;
   }
 
-  if (!inited || sc.IsFullRecalculation) { inited = 1; emaResp=0; }
-  if (sc.ArraySize <= 1) return;
+  if (!inited || sc.IsFullRecalculation) { inited = 1; }
+  if (sc.ArraySize <= 0) return;
 
-  int H = sc.Input[0].GetInt();
-  int idx = sc.ArraySize-1;
-  int j = idx - H; if (j < 0) j = 0;
-  double resp = sc.Close[idx] - sc.Close[j];
-  double a = sc.Input[1].GetInt()/100.0;
-  emaResp = a*resp + (1-a)*emaResp;
-  sc.Subgraph[1][idx] = emaResp;
+  int N = sc.Input[0].GetInt();
+  int start = sc.ArraySize - N; if (start < 0) start = 0;
+  double sum=0.0; for(int i=start;i<sc.ArraySize;++i) sum += sc.Close[i];
+  double avg = (sc.ArraySize-start>0? sum / (sc.ArraySize - start) : 0.0);
+  sc.Subgraph[1][sc.ArraySize-1] = avg;
 }

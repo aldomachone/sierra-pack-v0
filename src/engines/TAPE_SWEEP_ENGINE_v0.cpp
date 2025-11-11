@@ -1,23 +1,20 @@
 // ============================================================================
-// Pack v0 — Engines (v0) — complémentaires
+// Pack v0 — Engines (v0) — Tape & Advanced
 // ============================================================================
 #include "sierrachart.h"
 #include "Pack_v0.h"
 
 
-SCSFExport scsf_PRF_ENGINE_v0(SCStudyInterfaceRef sc)
+SCSFExport scsf_TAPE_SWEEP_ENGINE_v0(SCStudyInterfaceRef sc)
 {
-  int& inited  = sc.GetPersistentInt(1);
-  double& emaResp = sc.GetPersistentDouble(2);
+  int& inited = sc.GetPersistentInt(1);
+  double& sweepScore = sc.GetPersistentDouble(2);
 
   if (sc.SetDefaults)
   {
-    sc.GraphName = "PRF_ENGINE_v0";
-    sc.AutoLoop = 0;
-    sc.UpdateAlways = 0;
-    sc.GraphRegion = 0;
-    sc.ValueFormat = 26;
-    sc.FreeDLL = 0;
+    sc.GraphName = "TAPE_SWEEP_ENGINE_v0";
+    sc.AutoLoop = 0; sc.UpdateAlways = 1; sc.GraphRegion = 0; sc.ValueFormat = 26; sc.FreeDLL = 0;
+    sc.MaintainTimeAndSalesData = 1;
 
     sc.Subgraph[1].Name = "SG01";
     sc.Subgraph[1].DrawStyle = DRAWSTYLE_IGNORE;
@@ -52,24 +49,40 @@ SCSFExport scsf_PRF_ENGINE_v0(SCStudyInterfaceRef sc)
     sc.Subgraph[8].DrawZeros = false;
     sc.Subgraph[8].DisplayAsMainPriceGraphValue = 0;
 
-    sc.Input[0].Name = "01. Horizon barres";
-    sc.Input[0].SetInt(5); sc.Input[0].SetIntLimits(1, 1000);
+    sc.Input[0].Name = "01. Fenêtre ms";
+    sc.Input[0].SetInt(300); sc.Input[0].SetIntLimits(10, 5000);
 
-    sc.Input[1].Name = "02. EMA %";
-    sc.Input[1].SetInt(80); sc.Input[1].SetIntLimits(1, 99);
+    sc.Input[1].Name = "02. Min prints";
+    sc.Input[1].SetInt(5); sc.Input[1].SetIntLimits(1, 200);
 
-    sc.DrawZeros = false;
-    return;
+    sc.DrawZeros=false; return;
   }
 
-  if (!inited || sc.IsFullRecalculation) { inited = 1; emaResp=0; }
-  if (sc.ArraySize <= 1) return;
+  if (!inited || sc.IsFullRecalculation) { inited=1; sweepScore=0; }
 
-  int H = sc.Input[0].GetInt();
-  int idx = sc.ArraySize-1;
-  int j = idx - H; if (j < 0) j = 0;
-  double resp = sc.Close[idx] - sc.Close[j];
-  double a = sc.Input[1].GetInt()/100.0;
-  emaResp = a*resp + (1-a)*emaResp;
-  sc.Subgraph[1][idx] = emaResp;
+  c_SCTimeAndSalesArray ts; sc.GetTimeAndSales(ts);
+  if (ts.Size()==0) return;
+
+  int winMs = sc.Input[0].GetInt();
+  int minN  = sc.Input[1].GetInt();
+
+  double tEnd = ts[ts.Size()-1].DateTime;
+  double tBeg = tEnd - winMs/86400000.0;
+
+  int nUp=0, nDn=0;
+  double lastP = 0.0;
+  for(int i=ts.Size()-1; i>=0; --i)
+  {
+    const auto& e = ts[i];
+    if (e.DateTime < tBeg) break;
+    if (e.Type != SC_TS_TRADES) continue;
+    if (lastP>0 && e.Price>lastP) ++nUp;
+    if (lastP>0 && e.Price<lastP) ++nDn;
+    lastP = e.Price;
+  }
+  int n = nUp + nDn;
+  double dir = (nUp>nDn? +1.0 : (nDn>nUp? -1.0 : 0.0));
+  sweepScore = (n >= minN ? dir * n : 0.0);
+
+  int idx=sc.ArraySize-1; if(idx>=0) sc.Subgraph[1][idx]=sweepScore;
 }

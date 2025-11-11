@@ -1,23 +1,18 @@
 // ============================================================================
-// Pack v0 — Engines (v0) — complémentaires
+// Pack v0 — Engines (v0) — Tape & Advanced
 // ============================================================================
 #include "sierrachart.h"
 #include "Pack_v0.h"
 
 
-SCSFExport scsf_PRF_ENGINE_v0(SCStudyInterfaceRef sc)
+SCSFExport scsf_FILLPROB_ENGINE_v0(SCStudyInterfaceRef sc)
 {
-  int& inited  = sc.GetPersistentInt(1);
-  double& emaResp = sc.GetPersistentDouble(2);
+  int& inited = sc.GetPersistentInt(1);
 
   if (sc.SetDefaults)
   {
-    sc.GraphName = "PRF_ENGINE_v0";
-    sc.AutoLoop = 0;
-    sc.UpdateAlways = 0;
-    sc.GraphRegion = 0;
-    sc.ValueFormat = 26;
-    sc.FreeDLL = 0;
+    sc.GraphName = "FILLPROB_ENGINE_v0";
+    sc.AutoLoop = 0; sc.UpdateAlways = 0; sc.GraphRegion = 0; sc.ValueFormat = 26; sc.FreeDLL = 0;
 
     sc.Subgraph[1].Name = "SG01";
     sc.Subgraph[1].DrawStyle = DRAWSTYLE_IGNORE;
@@ -52,24 +47,35 @@ SCSFExport scsf_PRF_ENGINE_v0(SCStudyInterfaceRef sc)
     sc.Subgraph[8].DrawZeros = false;
     sc.Subgraph[8].DisplayAsMainPriceGraphValue = 0;
 
-    sc.Input[0].Name = "01. Horizon barres";
-    sc.Input[0].SetInt(5); sc.Input[0].SetIntLimits(1, 1000);
+    sc.Input[0].Name = "01. Lookback ATR";
+    sc.Input[0].SetInt(14); sc.Input[0].SetIntLimits(1, 10000);
 
-    sc.Input[1].Name = "02. EMA %";
-    sc.Input[1].SetInt(80); sc.Input[1].SetIntLimits(1, 99);
-
-    sc.DrawZeros = false;
-    return;
+    sc.DrawZeros=false; return;
   }
 
-  if (!inited || sc.IsFullRecalculation) { inited = 1; emaResp=0; }
-  if (sc.ArraySize <= 1) return;
+  if (!inited || sc.IsFullRecalculation) { inited=1; }
+  if (sc.ArraySize < 2) return;
 
-  int H = sc.Input[0].GetInt();
+  int N = sc.Input[0].GetInt();
   int idx = sc.ArraySize-1;
-  int j = idx - H; if (j < 0) j = 0;
-  double resp = sc.Close[idx] - sc.Close[j];
-  double a = sc.Input[1].GetInt()/100.0;
-  emaResp = a*resp + (1-a)*emaResp;
-  sc.Subgraph[1][idx] = emaResp;
+
+  // Gap d'ouverture approximé: Open[idx] - Close[idx-1]
+  double gap = sc.Open[idx] - sc.Close[idx-1];
+
+  // ATR simple N
+  int start = sc.ArraySize - N; if (start < 1) start = 1;
+  double trSum=0.0;
+  for(int k=start; k<=idx; ++k)
+  {
+    double tr = fmax(sc.High[k]-sc.Low[k], fmax(fabs(sc.High[k]-sc.Close[k-1]), fabs(sc.Low[k]-sc.Close[k-1])));
+    trSum += tr;
+  }
+  double atr = (idx-start+1>0? trSum/(idx-start+1) : 0.0);
+
+  // Proba simple: exp(-|gap|/atr) bornée [0,1]
+  double p = 0.0;
+  if (atr>0) { double r = fabs(gap)/atr; p = exp(-r); }
+  sc.Subgraph[1][idx] = p;      // probabilité de comblement
+  sc.Subgraph[2][idx] = gap;    // taille du gap
+  sc.Subgraph[3][idx] = atr;    // ATR
 }

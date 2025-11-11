@@ -5,14 +5,12 @@
 #include "Pack_v0.h"
 
 
-SCSFExport scsf_PRF_ENGINE_v0(SCStudyInterfaceRef sc)
+SCSFExport scsf_PIVOT_ENGINE_v0(SCStudyInterfaceRef sc)
 {
   int& inited  = sc.GetPersistentInt(1);
-  double& emaResp = sc.GetPersistentDouble(2);
-
   if (sc.SetDefaults)
   {
-    sc.GraphName = "PRF_ENGINE_v0";
+    sc.GraphName = "PIVOT_ENGINE_v0";
     sc.AutoLoop = 0;
     sc.UpdateAlways = 0;
     sc.GraphRegion = 0;
@@ -52,24 +50,25 @@ SCSFExport scsf_PRF_ENGINE_v0(SCStudyInterfaceRef sc)
     sc.Subgraph[8].DrawZeros = false;
     sc.Subgraph[8].DisplayAsMainPriceGraphValue = 0;
 
-    sc.Input[0].Name = "01. Horizon barres";
-    sc.Input[0].SetInt(5); sc.Input[0].SetIntLimits(1, 1000);
+    sc.Input[0].Name = "01. Période principale";
+    sc.Input[0].SetInt(20); sc.Input[0].SetIntLimits(1, 100000);
 
-    sc.Input[1].Name = "02. EMA %";
-    sc.Input[1].SetInt(80); sc.Input[1].SetIntLimits(1, 99);
+    sc.Input[1].Name = "02. Formule (0=Classic,1=Fibo,2=Camarilla,3=Woodie,4=DeMark)";
+    sc.Input[1].SetInt(0); sc.Input[1].SetIntLimits(0,4);
+    sc.Input[2].Name = "03. Période (0=J,1=T,2=A)";
+    sc.Input[2].SetInt(0); sc.Input[2].SetIntLimits(0,2);
 
     sc.DrawZeros = false;
     return;
   }
+  if (!inited || sc.IsFullRecalculation) { inited = 1; }
+  if (sc.ArraySize <= 0) return;
 
-  if (!inited || sc.IsFullRecalculation) { inited = 1; emaResp=0; }
-  if (sc.ArraySize <= 1) return;
+  const int per = sc.Input[0].GetInt();
 
-  int H = sc.Input[0].GetInt();
   int idx = sc.ArraySize-1;
-  int j = idx - H; if (j < 0) j = 0;
-  double resp = sc.Close[idx] - sc.Close[j];
-  double a = sc.Input[1].GetInt()/100.0;
-  emaResp = a*resp + (1-a)*emaResp;
-  sc.Subgraph[1][idx] = emaResp;
+  double H = sc.High[idx], L = sc.Low[idx], C = sc.Close[idx];
+  double P = (H+L+C)/3.0;
+  sc.Subgraph[1][idx] = P;
+
 }

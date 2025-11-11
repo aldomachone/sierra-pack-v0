@@ -24,7 +24,7 @@ namespace du {
 // ---------------------------------------------------------------------------
 // Types et constantes
 // ---------------------------------------------------------------------------
-struct TwSweepParams
+struct 				TwSweepParams
 {
   double halfLifeMs = 500.0;     // demi‑vie EMA du volume (ms)
   int    warmupMinN = 8;         // échantillons min avant déclenchement
@@ -33,7 +33,7 @@ struct TwSweepParams
   int    maxGapMs   = 250;       // écart max entre ticks successifs
 };
 
-struct TwSweepState
+struct 				TwSweepState
 {
   // Suivi EMA et variance
   double emaVol   = 0.0;
@@ -66,14 +66,14 @@ struct TwSweepState
   }
 };
 
-constexpr double kMsInSec = 1000.0;
-constexpr double kTiny    = 1e-12;
+constexpr double 	kMsInSec = 1000.0;
+constexpr double 	kTiny    = 1e-12;
 
 // ---------------------------------------------------------------------------
 // Math helpers
 // ---------------------------------------------------------------------------
-inline double clamp(double x, double lo, double hi) { return x < lo ? lo : (x > hi ? hi : x); }
-inline double ema_alpha(double hlMs, double dtMs)
+inline double 		clamp				(double x, double lo, double hi) { return x < lo ? lo : (x > hi ? hi : x); }
+inline double 		ema_alpha			(double hlMs, double dtMs)
 {
   if (hlMs <= 0.0 || dtMs <= 0.0) return 1.0;
   const double x = -0.6931471805599453 * (dtMs / hlMs);
@@ -83,14 +83,14 @@ inline double ema_alpha(double hlMs, double dtMs)
 // ---------------------------------------------------------------------------
 // Scoring simple bar‑based (compat v0)
 // ---------------------------------------------------------------------------
-inline float twSweepScore(const SCStudyInterfaceRef& sc, int idx)
+inline float 		twSweepScore		(const SCStudyInterfaceRef& sc, int idx)
 {
   const float uv = (float)sc.UpVolume[idx];
   const float dv = (float)sc.DownVolume[idx];
   return uv > dv ? uv : dv;
 }
 
-inline bool twSweepTrigger(const SCStudyInterfaceRef& sc, int idx, float thr)
+inline bool 		twSweepTrigger		(const SCStudyInterfaceRef& sc, int idx, float thr)
 {
   return twSweepScore(sc, idx) >= thr;
 }
@@ -98,7 +98,7 @@ inline bool twSweepTrigger(const SCStudyInterfaceRef& sc, int idx, float thr)
 // ---------------------------------------------------------------------------
 // Mise à jour à partir d’un tick ou Time&Sales (volUp, volDn, nowMs)
 // ---------------------------------------------------------------------------
-inline void twSweepUpdate(TwSweepState& st, long long nowMs, double volUp, double volDn, const TwSweepParams& p,
+inline void 		twSweepUpdate		(TwSweepState& st, long long nowMs, double volUp, double volDn, const TwSweepParams& p,
                           bool& outTriggered, double& outScore)
 {
   outTriggered = false;
@@ -159,7 +159,7 @@ inline void twSweepUpdate(TwSweepState& st, long long nowMs, double volUp, doubl
 // ---------------------------------------------------------------------------
 // Run detection explicite (alternative array‑based)
 // ---------------------------------------------------------------------------
-inline bool twRunDetect(const double* sides, int n, int minLen, long long maxGapMs, const long long* timesMs)
+inline bool 		twRunDetect			(const double* sides, int n, int minLen, long long maxGapMs, const long long* timesMs)
 {
   if (!sides || !timesMs || n <= 0) return false;
   int run = 1;
@@ -180,7 +180,7 @@ inline bool twRunDetect(const double* sides, int n, int minLen, long long maxGap
 // 0: ema_vol, 1: mean_vol, 2: last_vol, 3: run_len, 4: run_side,
 // 5: score, 6: total_sweeps, 7: total_runs, 8: last_side, 9: std_vol.
 // ---------------------------------------------------------------------------
-inline int twSweepFeatures_v1(const TwSweepState& st, double* out)
+inline int 			twSweepFeatures_v1	(const TwSweepState& st, double* out)
 {
   if (!out) return 0;
   const double var = (st.n > 1) ? st.m2Vol / (st.n - 1) : 0.0;
@@ -202,6 +202,6 @@ inline int twSweepFeatures_v1(const TwSweepState& st, double* out)
 // ---------------------------------------------------------------------------
 // Fonctions simples pour compatibilité v0
 // ---------------------------------------------------------------------------
-inline bool twSweep(const int* /*tsArr*/, int /*n*/, double /*thrQty*/, double /*thrRate*/) { return false; }
+inline bool 		twSweep(const int* /*tsArr*/, int /*n*/, double /*thrQty*/, double /*thrRate*/) { return false; }
 
 } // namespace du

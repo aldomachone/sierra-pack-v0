@@ -1,24 +1,18 @@
 // ============================================================================
-// Pack v0 — Engines (v0) — complémentaires
+// Pack v0 — Engines (v0) — DOM & StopRun
 // ============================================================================
 #include "sierrachart.h"
 #include "Pack_v0.h"
 
 
-SCSFExport scsf_MDHG_ENGINE_v0(SCStudyInterfaceRef sc)
+SCSFExport scsf_DOM_VACUUM_ENGINE_v0(SCStudyInterfaceRef sc)
 {
-  int& inited     = sc.GetPersistentInt(1);
-  double& emaNear = sc.GetPersistentDouble(2);
-  double& emaFar  = sc.GetPersistentDouble(3);
+  int& inited = sc.GetPersistentInt(1);
 
   if (sc.SetDefaults)
   {
-    sc.GraphName = "MDHG_ENGINE_v0";
-    sc.AutoLoop = 0;
-    sc.UpdateAlways = 1;
-    sc.GraphRegion = 0;
-    sc.ValueFormat = 26;
-    sc.FreeDLL = 0;
+    sc.GraphName = "DOM_VACUUM_ENGINE_v0";
+    sc.AutoLoop=0; sc.UpdateAlways=1; sc.GraphRegion=0; sc.ValueFormat=26; sc.FreeDLL=0;
     sc.UsesMarketDepthData = 1;
 
     sc.Subgraph[1].Name = "SG01";
@@ -86,38 +80,29 @@ SCSFExport scsf_MDHG_ENGINE_v0(SCStudyInterfaceRef sc)
     sc.Subgraph[16].DrawZeros = false;
     sc.Subgraph[16].DisplayAsMainPriceGraphValue = 0;
 
-    sc.Input[0].Name = "01. Fenêtre secondes";
-    sc.Input[0].SetInt(60); sc.Input[0].SetIntLimits(1, 3600);
+    sc.Input[0].Name = "01. Niveaux à scanner";
+    sc.Input[0].SetInt(30); sc.Input[0].SetIntLimits(1,60);
 
-    sc.Input[1].Name = "02. Niveaux Near";
-    sc.Input[1].SetInt(10); sc.Input[1].SetIntLimits(1, 60);
+    sc.Input[1].Name = "02. Seuil trou min (qty)";
+    sc.Input[1].SetInt(50); sc.Input[1].SetIntLimits(1,1000000);
 
-    sc.Input[2].Name = "03. Niveaux Far";
-    sc.Input[2].SetInt(30); sc.Input[2].SetIntLimits(1, 60);
-
-    sc.Input[3].Name = "04. EMA %";
-    sc.Input[3].SetInt(85); sc.Input[3].SetIntLimits(1, 99);
-
-    sc.DrawZeros = false;
-    return;
+    sc.DrawZeros=false; return;
   }
 
-  if (!inited || sc.IsFullRecalculation) { inited = 1; emaNear=0; emaFar=0; }
-  if (sc.TickSize <= 0) return;
+  if (!inited || sc.IsFullRecalculation) { inited=1; }
+  if (sc.TickSize<=0) return;
 
-  int nearN = sc.Input[1].GetInt();
-  int farN  = sc.Input[2].GetInt();
-  double a  = sc.Input[3].GetInt()/100.0;
-
+  int N = sc.Input[0].GetInt();
+  int thr = sc.Input[1].GetInt();
   s_MarketDepthEntry md{};
-  double sNear=0, sFar=0;
-  int availBid = sc.GetBidMarketDepthNumberOfLevels();
-  int availAsk = sc.GetAskMarketDepthNumberOfLevels();
-  for(int i=0;i<availBid && i<farN;++i){ sc.GetBidMarketDepthEntryAtLevel(md,i); (i<nearN? sNear:sFar)+=md.Quantity; }
-  for(int i=0;i<availAsk && i<farN;++i){ sc.GetAskMarketDepthEntryAtLevel(md,i); (i<nearN? sNear:sFar)+=md.Quantity; }
 
-  emaNear = a*sNear + (1-a)*emaNear;
-  emaFar  = a*sFar  + (1-a)*emaFar;
+  // Plus grand trou côté Bid et Ask
+  double maxHoleBid=0, maxHoleAsk=0;
+  int nb=sc.GetBidMarketDepthNumberOfLevels();
+  int na=sc.GetAskMarketDepthNumberOfLevels();
 
-  int idx = sc.ArraySize-1; if (idx>=0){ sc.Subgraph[1][idx]=emaNear; sc.Subgraph[2][idx]=emaFar; }
+  for(int i=0;i<nb && i<N;++i){ sc.GetBidMarketDepthEntryAtLevel(md,i); if(md.Quantity < thr) maxHoleBid = fmax(maxHoleBid, thr - md.Quantity); }
+  for(int i=0;i<na && i<N;++i){ sc.GetAskMarketDepthEntryAtLevel(md,i); if(md.Quantity < thr) maxHoleAsk = fmax(maxHoleAsk, thr - md.Quantity); }
+
+  int idx=sc.ArraySize-1; if(idx>=0){ sc.Subgraph[1][idx]=maxHoleBid; sc.Subgraph[2][idx]=-maxHoleAsk; }
 }

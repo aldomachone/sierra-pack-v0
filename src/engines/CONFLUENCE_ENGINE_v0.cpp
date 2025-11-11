@@ -1,25 +1,18 @@
 // ============================================================================
-// Pack v0 — Engines (v0) — complémentaires
+// Pack v0 — Engines (v0) — Tape & Advanced
 // ============================================================================
 #include "sierrachart.h"
 #include "Pack_v0.h"
 
 
-SCSFExport scsf_MDHG_ENGINE_v0(SCStudyInterfaceRef sc)
+SCSFExport scsf_CONFLUENCE_ENGINE_v0(SCStudyInterfaceRef sc)
 {
-  int& inited     = sc.GetPersistentInt(1);
-  double& emaNear = sc.GetPersistentDouble(2);
-  double& emaFar  = sc.GetPersistentDouble(3);
+  int& inited = sc.GetPersistentInt(1);
 
   if (sc.SetDefaults)
   {
-    sc.GraphName = "MDHG_ENGINE_v0";
-    sc.AutoLoop = 0;
-    sc.UpdateAlways = 1;
-    sc.GraphRegion = 0;
-    sc.ValueFormat = 26;
-    sc.FreeDLL = 0;
-    sc.UsesMarketDepthData = 1;
+    sc.GraphName = "CONFLUENCE_ENGINE_v0";
+    sc.AutoLoop = 0; sc.UpdateAlways = 0; sc.GraphRegion = 0; sc.ValueFormat = 26; sc.FreeDLL = 0;
 
     sc.Subgraph[1].Name = "SG01";
     sc.Subgraph[1].DrawStyle = DRAWSTYLE_IGNORE;
@@ -86,38 +79,49 @@ SCSFExport scsf_MDHG_ENGINE_v0(SCStudyInterfaceRef sc)
     sc.Subgraph[16].DrawZeros = false;
     sc.Subgraph[16].DisplayAsMainPriceGraphValue = 0;
 
-    sc.Input[0].Name = "01. Fenêtre secondes";
-    sc.Input[0].SetInt(60); sc.Input[0].SetIntLimits(1, 3600);
+    sc.Input[0].Name = "01. Poids VWAP";
+    sc.Input[0].SetFloat(1.0f);
+    sc.Input[1].Name = "02. Poids Pivot";
+    sc.Input[1].SetFloat(1.0f);
+    sc.Input[2].Name = "03. Poids Zone";
+    sc.Input[2].SetFloat(1.0f);
+    sc.Input[3].Name = "04. Fenêtre ATR";
+    sc.Input[3].SetInt(14); sc.Input[3].SetIntLimits(1, 10000);
 
-    sc.Input[1].Name = "02. Niveaux Near";
-    sc.Input[1].SetInt(10); sc.Input[1].SetIntLimits(1, 60);
-
-    sc.Input[2].Name = "03. Niveaux Far";
-    sc.Input[2].SetInt(30); sc.Input[2].SetIntLimits(1, 60);
-
-    sc.Input[3].Name = "04. EMA %";
-    sc.Input[3].SetInt(85); sc.Input[3].SetIntLimits(1, 99);
-
-    sc.DrawZeros = false;
-    return;
+    sc.DrawZeros=false; return;
   }
 
-  if (!inited || sc.IsFullRecalculation) { inited = 1; emaNear=0; emaFar=0; }
-  if (sc.TickSize <= 0) return;
+  if (!inited || sc.IsFullRecalculation) { inited=1; }
+  if (sc.ArraySize <= 1) return;
+  int idx = sc.ArraySize-1;
 
-  int nearN = sc.Input[1].GetInt();
-  int farN  = sc.Input[2].GetInt();
-  double a  = sc.Input[3].GetInt()/100.0;
+  // Placeholders: VWAP ≈ moyenne Close, Pivot ≈ (H+L+C)/3 sur dernière barre, Zone ≈ (H+L)/2 sur lookback court
+  double vwap = 0.0; int win=20; int start = sc.ArraySize - win; if (start<0) start=0;
+  for(int i=start;i<sc.ArraySize;++i) vwap += sc.Close[i];
+  vwap = (sc.ArraySize-start>0? vwap/(sc.ArraySize-start) : 0.0);
 
-  s_MarketDepthEntry md{};
-  double sNear=0, sFar=0;
-  int availBid = sc.GetBidMarketDepthNumberOfLevels();
-  int availAsk = sc.GetAskMarketDepthNumberOfLevels();
-  for(int i=0;i<availBid && i<farN;++i){ sc.GetBidMarketDepthEntryAtLevel(md,i); (i<nearN? sNear:sFar)+=md.Quantity; }
-  for(int i=0;i<availAsk && i<farN;++i){ sc.GetAskMarketDepthEntryAtLevel(md,i); (i<nearN? sNear:sFar)+=md.Quantity; }
+  double P = (sc.High[idx]+sc.Low[idx]+sc.Close[idx])/3.0;
 
-  emaNear = a*sNear + (1-a)*emaNear;
-  emaFar  = a*sFar  + (1-a)*emaFar;
+  int lb=50; int s2 = sc.ArraySize - lb; if (s2<0) s2=0;
+  double hi=-1e300, lo=1e300; for(int i=s2;i<sc.ArraySize;++i){ if(sc.High[i]>hi) hi=sc.High[i]; if(sc.Low[i]<lo) lo=sc.Low[i]; }
+  double zone = 0.5*(hi+lo);
 
-  int idx = sc.ArraySize-1; if (idx>=0){ sc.Subgraph[1][idx]=emaNear; sc.Subgraph[2][idx]=emaFar; }
+  // ATR pour normaliser distances
+  int N = sc.Input[3].GetInt();
+  int s3 = sc.ArraySize - N; if (s3 < 1) s3 = 1;
+  double trSum=0.0; for(int k=s3;k<=idx;++k){ double tr=fmax(sc.High[k]-sc.Low[k], fmax(fabs(sc.High[k]-sc.Close[k-1]), fabs(sc.Low[k]-sc.Close[k-1]))); trSum+=tr; }
+  double atr=(idx-s3+1>0? trSum/(idx-s3+1):0.0);
+  if (atr<=0) return;
+
+  double wV=sc.Input[0].GetFloat(), wP=sc.Input[1].GetFloat(), wZ=sc.Input[2].GetFloat();
+  double px = sc.Close[idx];
+  double dV = fabs(px - vwap)/atr;
+  double dP = fabs(px - P)/atr;
+  double dZ = fabs(px - zone)/atr;
+
+  double score = wV*(1.0/(1.0+dV)) + wP*(1.0/(1.0+dP)) + wZ*(1.0/(1.0+dZ));
+  sc.Subgraph[1][idx] = score;
+  sc.Subgraph[2][idx] = vwap;
+  sc.Subgraph[3][idx] = P;
+  sc.Subgraph[4][idx] = zone;
 }

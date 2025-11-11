@@ -5,14 +5,12 @@
 #include "Pack_v0.h"
 
 
-SCSFExport scsf_PRF_ENGINE_v0(SCStudyInterfaceRef sc)
+SCSFExport scsf_RELOAD_ENGINE_v0(SCStudyInterfaceRef sc)
 {
   int& inited  = sc.GetPersistentInt(1);
-  double& emaResp = sc.GetPersistentDouble(2);
-
   if (sc.SetDefaults)
   {
-    sc.GraphName = "PRF_ENGINE_v0";
+    sc.GraphName = "RELOAD_ENGINE_v0";
     sc.AutoLoop = 0;
     sc.UpdateAlways = 0;
     sc.GraphRegion = 0;
@@ -52,24 +50,30 @@ SCSFExport scsf_PRF_ENGINE_v0(SCStudyInterfaceRef sc)
     sc.Subgraph[8].DrawZeros = false;
     sc.Subgraph[8].DisplayAsMainPriceGraphValue = 0;
 
-    sc.Input[0].Name = "01. Horizon barres";
-    sc.Input[0].SetInt(5); sc.Input[0].SetIntLimits(1, 1000);
+    sc.Input[0].Name = "01. Période principale";
+    sc.Input[0].SetInt(20); sc.Input[0].SetIntLimits(1, 100000);
 
-    sc.Input[1].Name = "02. EMA %";
-    sc.Input[1].SetInt(80); sc.Input[1].SetIntLimits(1, 99);
+    sc.Input[1].Name = "02. Lookback swing";
+    sc.Input[1].SetInt(30); sc.Input[1].SetIntLimits(1, 100000);
+    sc.Input[2].Name = "03. Seuil % recharge";
+    sc.Input[2].SetFloat(25.0f);
 
     sc.DrawZeros = false;
     return;
   }
+  if (!inited || sc.IsFullRecalculation) { inited = 1; }
+  if (sc.ArraySize <= 0) return;
 
-  if (!inited || sc.IsFullRecalculation) { inited = 1; emaResp=0; }
-  if (sc.ArraySize <= 1) return;
+  const int per = sc.Input[0].GetInt();
 
-  int H = sc.Input[0].GetInt();
   int idx = sc.ArraySize-1;
-  int j = idx - H; if (j < 0) j = 0;
-  double resp = sc.Close[idx] - sc.Close[j];
-  double a = sc.Input[1].GetInt()/100.0;
-  emaResp = a*resp + (1-a)*emaResp;
-  sc.Subgraph[1][idx] = emaResp;
+  const int lb = sc.Input[1].GetInt();
+  double thr = sc.Input[2].GetFloat() / 100.0;
+  int start = sc.ArraySize - lb; if (start < 0) start = 0;
+  double lastHi = sc.High[start], lastLo = sc.Low[start];
+  for (int i=start; i<sc.ArraySize; ++i) { if (sc.High[i]>lastHi) lastHi=sc.High[i]; if (sc.Low[i]<lastLo) lastLo=sc.Low[i]; }
+  double mid = 0.5*(lastHi+lastLo);
+  double distPct = (mid>0? fabs(sc.Close[idx]-mid)/mid : 0.0);
+  sc.Subgraph[1][idx] = distPct >= thr ? 1.0 : 0.0;
+
 }

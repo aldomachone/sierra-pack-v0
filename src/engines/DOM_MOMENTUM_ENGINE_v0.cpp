@@ -1,24 +1,19 @@
 // ============================================================================
-// Pack v0 — Engines (v0) — complémentaires
+// Pack v0 — Engines (v0) — DOM & StopRun
 // ============================================================================
 #include "sierrachart.h"
 #include "Pack_v0.h"
 
 
-SCSFExport scsf_MDHG_ENGINE_v0(SCStudyInterfaceRef sc)
+SCSFExport scsf_DOM_MOMENTUM_ENGINE_v0(SCStudyInterfaceRef sc)
 {
-  int& inited     = sc.GetPersistentInt(1);
-  double& emaNear = sc.GetPersistentDouble(2);
-  double& emaFar  = sc.GetPersistentDouble(3);
+  int& inited = sc.GetPersistentInt(1);
+  double& eMom = sc.GetPersistentDouble(2);
 
   if (sc.SetDefaults)
   {
-    sc.GraphName = "MDHG_ENGINE_v0";
-    sc.AutoLoop = 0;
-    sc.UpdateAlways = 1;
-    sc.GraphRegion = 0;
-    sc.ValueFormat = 26;
-    sc.FreeDLL = 0;
+    sc.GraphName = "DOM_MOMENTUM_ENGINE_v0";
+    sc.AutoLoop=0; sc.UpdateAlways=1; sc.GraphRegion=0; sc.ValueFormat=26; sc.FreeDLL=0;
     sc.UsesMarketDepthData = 1;
 
     sc.Subgraph[1].Name = "SG01";
@@ -85,39 +80,73 @@ SCSFExport scsf_MDHG_ENGINE_v0(SCStudyInterfaceRef sc)
     sc.Subgraph[16].DrawStyle = DRAWSTYLE_IGNORE;
     sc.Subgraph[16].DrawZeros = false;
     sc.Subgraph[16].DisplayAsMainPriceGraphValue = 0;
+    sc.Subgraph[17].Name = "SG17";
+    sc.Subgraph[17].DrawStyle = DRAWSTYLE_IGNORE;
+    sc.Subgraph[17].DrawZeros = false;
+    sc.Subgraph[17].DisplayAsMainPriceGraphValue = 0;
+    sc.Subgraph[18].Name = "SG18";
+    sc.Subgraph[18].DrawStyle = DRAWSTYLE_IGNORE;
+    sc.Subgraph[18].DrawZeros = false;
+    sc.Subgraph[18].DisplayAsMainPriceGraphValue = 0;
+    sc.Subgraph[19].Name = "SG19";
+    sc.Subgraph[19].DrawStyle = DRAWSTYLE_IGNORE;
+    sc.Subgraph[19].DrawZeros = false;
+    sc.Subgraph[19].DisplayAsMainPriceGraphValue = 0;
+    sc.Subgraph[20].Name = "SG20";
+    sc.Subgraph[20].DrawStyle = DRAWSTYLE_IGNORE;
+    sc.Subgraph[20].DrawZeros = false;
+    sc.Subgraph[20].DisplayAsMainPriceGraphValue = 0;
+    sc.Subgraph[21].Name = "SG21";
+    sc.Subgraph[21].DrawStyle = DRAWSTYLE_IGNORE;
+    sc.Subgraph[21].DrawZeros = false;
+    sc.Subgraph[21].DisplayAsMainPriceGraphValue = 0;
+    sc.Subgraph[22].Name = "SG22";
+    sc.Subgraph[22].DrawStyle = DRAWSTYLE_IGNORE;
+    sc.Subgraph[22].DrawZeros = false;
+    sc.Subgraph[22].DisplayAsMainPriceGraphValue = 0;
+    sc.Subgraph[23].Name = "SG23";
+    sc.Subgraph[23].DrawStyle = DRAWSTYLE_IGNORE;
+    sc.Subgraph[23].DrawZeros = false;
+    sc.Subgraph[23].DisplayAsMainPriceGraphValue = 0;
+    sc.Subgraph[24].Name = "SG24";
+    sc.Subgraph[24].DrawStyle = DRAWSTYLE_IGNORE;
+    sc.Subgraph[24].DrawZeros = false;
+    sc.Subgraph[24].DisplayAsMainPriceGraphValue = 0;
 
-    sc.Input[0].Name = "01. Fenêtre secondes";
-    sc.Input[0].SetInt(60); sc.Input[0].SetIntLimits(1, 3600);
+    sc.Input[0].Name = "01. Niveaux Near";
+    sc.Input[0].SetInt(8); sc.Input[0].SetIntLimits(1,60);
 
-    sc.Input[1].Name = "02. Niveaux Near";
-    sc.Input[1].SetInt(10); sc.Input[1].SetIntLimits(1, 60);
+    sc.Input[1].Name = "02. Niveaux Far";
+    sc.Input[1].SetInt(24); sc.Input[1].SetIntLimits(1,60);
 
-    sc.Input[2].Name = "03. Niveaux Far";
-    sc.Input[2].SetInt(30); sc.Input[2].SetIntLimits(1, 60);
+    sc.Input[2].Name = "03. EMA % lissage";
+    sc.Input[2].SetInt(85); sc.Input[2].SetIntLimits(1,99);
 
-    sc.Input[3].Name = "04. EMA %";
-    sc.Input[3].SetInt(85); sc.Input[3].SetIntLimits(1, 99);
-
-    sc.DrawZeros = false;
-    return;
+    sc.DrawZeros=false; return;
   }
 
-  if (!inited || sc.IsFullRecalculation) { inited = 1; emaNear=0; emaFar=0; }
-  if (sc.TickSize <= 0) return;
+  if (!inited || sc.IsFullRecalculation) { inited=1; eMom=0; }
+  if (sc.TickSize<=0) return;
 
-  int nearN = sc.Input[1].GetInt();
-  int farN  = sc.Input[2].GetInt();
-  double a  = sc.Input[3].GetInt()/100.0;
+  int nearN = sc.Input[0].GetInt();
+  int farN  = sc.Input[1].GetInt();
+  double a  = sc.Input[2].GetInt()/100.0;
 
+  // Sums
   s_MarketDepthEntry md{};
-  double sNear=0, sFar=0;
-  int availBid = sc.GetBidMarketDepthNumberOfLevels();
-  int availAsk = sc.GetAskMarketDepthNumberOfLevels();
-  for(int i=0;i<availBid && i<farN;++i){ sc.GetBidMarketDepthEntryAtLevel(md,i); (i<nearN? sNear:sFar)+=md.Quantity; }
-  for(int i=0;i<availAsk && i<farN;++i){ sc.GetAskMarketDepthEntryAtLevel(md,i); (i<nearN? sNear:sFar)+=md.Quantity; }
+  double bNear=0,aNear=0,bFar=0,aFar=0;
+  int nb = sc.GetBidMarketDepthNumberOfLevels();
+  int na = sc.GetAskMarketDepthNumberOfLevels();
 
-  emaNear = a*sNear + (1-a)*emaNear;
-  emaFar  = a*sFar  + (1-a)*emaFar;
+  for(int i=0;i<nb && i<farN;++i){ sc.GetBidMarketDepthEntryAtLevel(md,i); (i<nearN? bNear:bFar)+=md.Quantity; }
+  for(int i=0;i<na && i<farN;++i){ sc.GetAskMarketDepthEntryAtLevel(md,i); (i<nearN? aNear:aFar)+=md.Quantity; }
 
-  int idx = sc.ArraySize-1; if (idx>=0){ sc.Subgraph[1][idx]=emaNear; sc.Subgraph[2][idx]=emaFar; }
+  // Momentum = (ΔBidNear - ΔAskNear) + 0.5*(ΔBidFar - ΔAskFar)
+  static double pBN=0,pAN=0,pBF=0,pAF=0;
+  double d = (bNear-pBN) - (aNear-pAN) + 0.5*((bFar-pBF) - (aFar-pAF));
+  pBN=bNear; pAN=aNear; pBF=bFar; pAF=aFar;
+
+  eMom = a*d + (1-a)*eMom;
+
+  int idx=sc.ArraySize-1; if(idx>=0){ sc.Subgraph[1][idx]=eMom; }
 }

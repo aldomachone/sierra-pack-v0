@@ -1,22 +1,21 @@
 // ============================================================================
-// Pack v0 — Engines (v0) — complémentaires
+// Pack v0 — Engines (v0) — DOM & StopRun
 // ============================================================================
 #include "sierrachart.h"
 #include "Pack_v0.h"
 
 
-SCSFExport scsf_LIQRISK_ENGINE_v0(SCStudyInterfaceRef sc)
+SCSFExport scsf_STOP_RUN_ENGINE_v0(SCStudyInterfaceRef sc)
 {
   int& inited = sc.GetPersistentInt(1);
+  double& emaCad = sc.GetPersistentDouble(2);
+  double& emaSz  = sc.GetPersistentDouble(3);
 
   if (sc.SetDefaults)
   {
-    sc.GraphName = "LIQRISK_ENGINE_v0";
-    sc.AutoLoop = 0;
-    sc.UpdateAlways = 0;
-    sc.GraphRegion = 0;
-    sc.ValueFormat = 26;
-    sc.FreeDLL = 0;
+    sc.GraphName = "STOP_RUN_ENGINE_v0";
+    sc.AutoLoop=0; sc.UpdateAlways=1; sc.GraphRegion=0; sc.ValueFormat=26; sc.FreeDLL=0;
+    sc.MaintainTimeAndSalesData = 1;
 
     sc.Subgraph[1].Name = "SG01";
     sc.Subgraph[1].DrawStyle = DRAWSTYLE_IGNORE;
@@ -51,30 +50,43 @@ SCSFExport scsf_LIQRISK_ENGINE_v0(SCStudyInterfaceRef sc)
     sc.Subgraph[8].DrawZeros = false;
     sc.Subgraph[8].DisplayAsMainPriceGraphValue = 0;
 
-    sc.Input[0].Name = "01. Lookback barres";
-    sc.Input[0].SetInt(50); sc.Input[0].SetIntLimits(1, 100000);
+    sc.Input[0].Name = "01. Fenêtre ms";
+    sc.Input[0].SetInt(400); sc.Input[0].SetIntLimits(50, 5000);
 
-    sc.Input[1].Name = "02. % collapse seuil";
-    sc.Input[1].SetFloat(1.0f);
+    sc.Input[1].Name = "02. EMA %";
+    sc.Input[1].SetInt(85); sc.Input[1].SetIntLimits(1,99);
 
-    sc.DrawZeros = false;
-    return;
+    sc.DrawZeros=false; return;
   }
 
-  if (!inited || sc.IsFullRecalculation) { inited = 1; }
-  if (sc.ArraySize <= 1) return;
+  if (!inited || sc.IsFullRecalculation) { inited=1; emaCad=0; emaSz=0; }
+  c_SCTimeAndSalesArray ts; sc.GetTimeAndSales(ts);
+  if (ts.Size()==0 || sc.ArraySize==0) return;
 
-  const int lb = sc.Input[0].GetInt();
-  int start = sc.ArraySize - lb; if (start < 1) start = 1;
+  int winMs = sc.Input[0].GetInt();
+  double a  = sc.Input[1].GetInt()/100.0;
 
-  double trSum=0.0;
-  for (int i=start; i<sc.ArraySize; ++i)
+  double tEnd = ts[ts.Size()-1].DateTime;
+  double tBeg = tEnd - winMs/86400000.0;
+
+  int n=0; double sumSz=0; double lastP=0; int up=0,dn=0;
+  for(int i=ts.Size()-1;i>=0;--i)
   {
-    double tr = fmax(sc.High[i]-sc.Low[i], fmax(fabs(sc.High[i]-sc.Close[i-1]), fabs(sc.Low[i]-sc.Close[i-1])));
-    trSum += tr;
+    const auto& e=ts[i];
+    if (e.DateTime < tBeg) break;
+    if (e.Type!=SC_TS_TRADES) continue;
+    ++n; sumSz += e.Volume;
+    if (lastP>0) { if(e.Price>lastP) ++up; else if(e.Price<lastP) ++dn; }
+    lastP=e.Price;
   }
-  double atr = (lb>0? trSum/lb : 0.0);
-  double price = sc.Close[sc.ArraySize-1];
-  double risk = (price>0? atr/price : 0.0);
-  sc.Subgraph[1][sc.ArraySize-1] = risk;
+  double cad = (winMs>0? n*1000.0/winMs : 0.0);
+  emaCad = a*cad + (1-a)*emaCad;
+  double avgSz = (n>0? sumSz/n : 0.0);
+  emaSz  = a*avgSz + (1-a)*emaSz;
+
+  // Score stop-run = direction * cadence * taille
+  double dir = (up>dn? +1.0 : (dn>up? -1.0 : 0.0));
+  double score = dir * emaCad * (emaSz>0? emaSz:0.0);
+
+  int idx=sc.ArraySize-1; if(idx>=0) { sc.Subgraph[1][idx]=score; sc.Subgraph[2][idx]=emaCad; sc.Subgraph[3][idx]=emaSz; }
 }

@@ -1,23 +1,18 @@
 // ============================================================================
-// Pack v0 — Engines (v0) — complémentaires
+// Pack v0 — Engines (v0) — Tape & Advanced
 // ============================================================================
 #include "sierrachart.h"
 #include "Pack_v0.h"
 
 
-SCSFExport scsf_PRF_ENGINE_v0(SCStudyInterfaceRef sc)
+SCSFExport scsf_OFI_ENGINE_v0(SCStudyInterfaceRef sc)
 {
-  int& inited  = sc.GetPersistentInt(1);
-  double& emaResp = sc.GetPersistentDouble(2);
+  int& inited = sc.GetPersistentInt(1);
 
   if (sc.SetDefaults)
   {
-    sc.GraphName = "PRF_ENGINE_v0";
-    sc.AutoLoop = 0;
-    sc.UpdateAlways = 0;
-    sc.GraphRegion = 0;
-    sc.ValueFormat = 26;
-    sc.FreeDLL = 0;
+    sc.GraphName = "OFI_ENGINE_v0";
+    sc.AutoLoop = 0; sc.UpdateAlways = 0; sc.GraphRegion = 0; sc.ValueFormat = 26; sc.FreeDLL = 0;
 
     sc.Subgraph[1].Name = "SG01";
     sc.Subgraph[1].DrawStyle = DRAWSTYLE_IGNORE;
@@ -53,23 +48,23 @@ SCSFExport scsf_PRF_ENGINE_v0(SCStudyInterfaceRef sc)
     sc.Subgraph[8].DisplayAsMainPriceGraphValue = 0;
 
     sc.Input[0].Name = "01. Horizon barres";
-    sc.Input[0].SetInt(5); sc.Input[0].SetIntLimits(1, 1000);
+    sc.Input[0].SetInt(1); sc.Input[0].SetIntLimits(1, 1000);
 
-    sc.Input[1].Name = "02. EMA %";
-    sc.Input[1].SetInt(80); sc.Input[1].SetIntLimits(1, 99);
-
-    sc.DrawZeros = false;
-    return;
+    sc.DrawZeros=false; return;
   }
 
-  if (!inited || sc.IsFullRecalculation) { inited = 1; emaResp=0; }
+  if (!inited || sc.IsFullRecalculation) { inited=1; }
   if (sc.ArraySize <= 1) return;
 
   int H = sc.Input[0].GetInt();
-  int idx = sc.ArraySize-1;
-  int j = idx - H; if (j < 0) j = 0;
-  double resp = sc.Close[idx] - sc.Close[j];
-  double a = sc.Input[1].GetInt()/100.0;
-  emaResp = a*resp + (1-a)*emaResp;
-  sc.Subgraph[1][idx] = emaResp;
+  int i = sc.ArraySize-1;
+  int j = i - H; if (j < 0) j = 0;
+
+  // Approx OFI: delta BidVol - delta AskVol sur la fenêtre
+  double dBV=0.0, dAV=0.0;
+  dBV = sc.BidVolume[i] - sc.BidVolume[j];
+  dAV = sc.AskVolume[i] - sc.AskVolume[j];
+  sc.Subgraph[1][i] = dBV - dAV;       // OFI net
+  sc.Subgraph[2][i] = dBV;             // BidVol delta
+  sc.Subgraph[3][i] = -dAV;            // AskVol delta (négatif pour symétrie)
 }
