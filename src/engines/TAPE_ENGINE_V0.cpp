@@ -1,44 +1,21 @@
-#include "src/headers/Pack_v0.h"
+#include "Pack_v0.h"
 
-// Engine Tape minimal v0 : accumulateurs Buy/Sell par barre, Delta.
-// Subgraphs cachés; pas de classification avancée.
-
-SCSFExport scsf_TAPE_ENGINE_V0(SCStudyInterfaceRef sc)
+SCSFExport scsf_TAPE_ENGINE_v0(SCStudyInterfaceRef sc)
 {
-  if (sc.SetDefaults)
-  {
-    sc.AutoLoop = 1;              // v0 simple par barre
-    sc.UpdateAlways = 0;
-    sc.GraphRegion = 1;
-    sc.ValueFormat = 26;
-
-    sc.Subgraph[0].Name = "BuyVol";
-    sc.Subgraph[1].Name = "SellVol";
-    sc.Subgraph[2].Name = "Delta";
-    for (int i = 0; i < 3; ++i)
-    {
-      sc.Subgraph[i].DrawStyle = DRAWSTYLE_IGNORE;
-      sc.Subgraph[i].DrawZeros = 0;
-    }
-
-    sc.Input[0].Name = "01. Remise à zéro par nouvelle barre";
-    sc.Input[0].SetYesNo(1);
-
-    return;
+  enum { P_In_DtMs=1, P_In_HLms };
+  if(sc.SetDefaults){
+    sc.AutoLoop = 0; sc.UpdateAlways = 1; sc.ValueFormat=26; sc.GraphRegion=0; sc.FreeDLL=0;
+    for(int sg=1; sg<=16; ++sg){ sc.Subgraph[sg].Name="ENG_TAPE_"+SCString(sg); sc.Subgraph[sg].DrawStyle=DRAWSTYLE_IGNORE; sc.Subgraph[sg].DrawZeros=0; }
+    sc.Input[P_In_DtMs].Name="01. Pas temps (ms)"; sc.Input[P_In_DtMs].SetInt(50);
+    sc.Input[P_In_HLms].Name="02. Demi-vie (ms)";  sc.Input[P_In_HLms].SetInt(250);
+    sc.DisplayStudyInputValues=false; return;
   }
 
-  if (sc.Index == 0 && sc.Input[0].GetYesNo())
-  {
-    sc.Subgraph[0][sc.Index] = 0;
-    sc.Subgraph[1][sc.Index] = 0;
-    sc.Subgraph[2][sc.Index] = 0;
-  }
+  const double dtMs = (double)std::max(1, sc.Input[P_In_DtMs].GetInt());
+  const double hlMs = (double)std::max(1, sc.Input[P_In_HLms].GetInt());
 
-  // v0: utilise simplement VolumeUp/VolumeDown de la barre
-  const float buy  = (float)sc.UpVolume[sc.Index];
-  const float sell = (float)sc.DownVolume[sc.Index];
-
-  sc.Subgraph[0][sc.Index] = buy;
-  sc.Subgraph[1][sc.Index] = sell;
-  sc.Subgraph[2][sc.Index] = buy - sell;
+  // Exemple: Pace features → SG1..SG16
+  // Appelle tes helpers Tape Pace/BVC/Sweep/Exhaust et écris dans les SG
+  // Ici placeholder: zéro (aucun impact d’échelle)
+  for(int sg=1; sg<=16; ++sg) sc.Subgraph[sg][sc.Index]=0.0f;
 }
