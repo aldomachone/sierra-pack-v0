@@ -1,14 +1,13 @@
 // ============================================================================
-// Pack v0 — Engines v0 (compléments supplémentaires)
+// Pack v0 — Engines v0 (variants supplémentaires)
 // ============================================================================
 #include "sierrachart.h"
 #include "Pack_v0.h"
 
-SCSFExport scsf_TAPE_PACE_ENGINE_v0(SCStudyInterfaceRef sc)
+SCSFExport scsf_PROFILE_VA_ENGINE_v0(SCStudyInterfaceRef sc)
 {
-  int& inited=sc.GetPersistentInt(1); double& ema=sc.GetPersistentDouble(2);
   if(sc.SetDefaults){
-    sc.GraphName="TAPE_PACE_ENGINE_v0"; sc.AutoLoop=0; sc.UpdateAlways=1; sc.GraphRegion=0; sc.ValueFormat=26; sc.MaintainTimeAndSalesData=1; sc.FreeDLL=0;
+    sc.GraphName="PROFILE_VA_ENGINE_v0"; sc.AutoLoop=0; sc.UpdateAlways=0; sc.GraphRegion=0; sc.ValueFormat=26; sc.FreeDLL=0;
     sc.Subgraph[1].Name = "SG01";
     sc.Subgraph[1].DrawStyle = DRAWSTYLE_IGNORE;
     sc.Subgraph[1].DrawZeros = false;
@@ -41,15 +40,22 @@ SCSFExport scsf_TAPE_PACE_ENGINE_v0(SCStudyInterfaceRef sc)
     sc.Subgraph[8].DrawStyle = DRAWSTYLE_IGNORE;
     sc.Subgraph[8].DrawZeros = false;
     sc.Subgraph[8].DisplayAsMainPriceGraphValue = 0;
-    sc.Input[0].Name="01. Fenêtre ms"; sc.Input[0].SetInt(1000); sc.Input[0].SetIntLimits(50,10000);
-    sc.Input[1].Name="02. EMA %"; sc.Input[1].SetInt(85); sc.Input[1].SetIntLimits(1,99);
+    sc.Input[0].Name="01. Lookback"; sc.Input[0].SetInt(120); sc.Input[0].SetIntLimits(10,200000);
+    sc.Input[1].Name="02. VA %"; sc.Input[1].SetFloat(70.0f);
     sc.DrawZeros=false; return;
   }
-  if(!inited||sc.IsFullRecalculation){ inited=1; ema=0; }
-  c_SCTimeAndSalesArray ts; sc.GetTimeAndSales(ts); if(ts.Size()==0 || sc.ArraySize==0) return;
-  int win=sc.Input[0].GetInt(); double a=sc.Input[1].GetInt()/100.0;
-  double tEnd=ts[ts.Size()-1].DateTime, tBeg=tEnd-win/86400000.0; int n=0;
-  for(int i=ts.Size()-1;i>=0;--i){ const auto& e=ts[i]; if(e.DateTime<tBeg) break; if(e.Type==SC_TS_TRADES) ++n; }
-  ema=a*n + (1-a)*ema;
-  sc.Subgraph[1][sc.ArraySize-1]=ema;
+  if(sc.ArraySize<=0) return;
+  int lb=sc.Input[0].GetInt(); int start=sc.ArraySize-lb; if(start<0) start=0;
+  const int B=64; double hi=-1e300, lo=1e300;
+  for(int i=start;i<sc.ArraySize;++i){ if(sc.High[i]>hi) hi=sc.High[i]; if(sc.Low[i]<lo) lo=sc.Low[i]; }
+  if(hi<=lo) return;
+  double bins[B]; for(int i=0;i<B;++i) bins[i]=0.0;
+  for(int i=start;i<sc.ArraySize;++i){ int b=(int)((sc.Close[i]-lo)/(hi-lo)*(B-1)); if(b<0) b=0; if(b>=B) b=B-1; bins[b]+=sc.Volume[i]; }
+  double tot=0; for(int i=0;i<B;++i) tot+=bins[i];
+  if(tot<=0) return;
+  int poc=0; for(int i=1;i<B;++i) if(bins[i]>bins[poc]) poc=i;
+  double target=sc.Input[1].GetFloat()/100.0*tot; int l=poc, r=poc; double acc=bins[poc];
+  while(acc<target && (l>0 || r<B-1)){ if(r<B-1 && (l==0 || bins[r+1]>=bins[l-1])){ ++r; acc+=bins[r]; } else { --l; acc+=bins[l]; } }
+  double priceL = lo + (hi-lo)*l/(B-1); double priceR = lo + (hi-lo)*r/(B-1);
+  int idx=sc.ArraySize-1; sc.Subgraph[1][idx]=priceR; sc.Subgraph[2][idx]=priceL; sc.Subgraph[3][idx]=lo + (hi-lo)*poc/(B-1);
 }

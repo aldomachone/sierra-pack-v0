@@ -4,10 +4,10 @@
 #include "sierrachart.h"
 #include "Pack_v0.h"
 
-SCSFExport scsf_RANGE_IB_ENGINE_v0(SCStudyInterfaceRef sc)
+SCSFExport scsf_VWAP_CROSS_ALERT_ENGINE_v0(SCStudyInterfaceRef sc)
 {
   if(sc.SetDefaults){
-    sc.GraphName="RANGE_IB_ENGINE_v0"; sc.AutoLoop=0; sc.UpdateAlways=0; sc.GraphRegion=0; sc.ValueFormat=26; sc.FreeDLL=0;
+    sc.GraphName="VWAP_CROSS_ALERT_ENGINE_v0"; sc.AutoLoop=0; sc.UpdateAlways=0; sc.GraphRegion=0; sc.ValueFormat=26; sc.FreeDLL=0;
     sc.Subgraph[1].Name = "SG01";
     sc.Subgraph[1].DrawStyle = DRAWSTYLE_IGNORE;
     sc.Subgraph[1].DrawZeros = false;
@@ -24,12 +24,12 @@ SCSFExport scsf_RANGE_IB_ENGINE_v0(SCStudyInterfaceRef sc)
     sc.Subgraph[4].DrawStyle = DRAWSTYLE_IGNORE;
     sc.Subgraph[4].DrawZeros = false;
     sc.Subgraph[4].DisplayAsMainPriceGraphValue = 0;
-    sc.Input[0].Name="01. Durée IB minutes"; sc.Input[0].SetInt(60); sc.Input[0].SetIntLimits(1,600);
+    sc.Input[0].Name="01. Période"; sc.Input[0].SetInt(50); sc.Input[0].SetIntLimits(2,100000);
     sc.DrawZeros=false; return;
   }
-  if(sc.ArraySize<=0) return;
-  // Proxy IB par nombre de barres si timeframe en minutes = 1
-  int bars=sc.Input[0].GetInt(); int idx=sc.ArraySize-1; int s=idx-bars; if(s<0) s=0;
-  double hi=-1e300, lo=1e300; for(int i=s;i<=idx;++i){ if(sc.High[i]>hi) hi=sc.High[i]; if(sc.Low[i]<lo) lo=sc.Low[i]; }
-  sc.Subgraph[1][idx]=hi; sc.Subgraph[2][idx]=lo; sc.Subgraph[3][idx]=hi-lo;
+  if(sc.ArraySize<=1) return; int idx=sc.ArraySize-1; int per=sc.Input[0].GetInt(); int s=idx-per; if(s<0) s=0;
+  double pSum=0,vSum=0; for(int i=s;i<=idx;++i){ pSum+=sc.Close[i]*sc.Volume[i]; vSum+=sc.Volume[i]; }
+  double vwap=(vSum>0? pSum/vSum:0.0); double prev=sc.Close[idx-1]-vwap; double cur=sc.Close[idx]-vwap;
+  sc.Subgraph[1][idx] = (prev<=0 && cur>0 ? +1.0 : (prev>=0 && cur<0 ? -1.0 : 0.0));
+  sc.Subgraph[2][idx] = vwap;
 }

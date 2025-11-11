@@ -1,22 +1,13 @@
 // ============================================================================
-// Pack v0 — Engines (v0) — complémentaires
+// Pack v0 — Engines v0 (compléments supplémentaires)
 // ============================================================================
 #include "sierrachart.h"
 #include "Pack_v0.h"
 
-
 SCSFExport scsf_ZONE_ENGINE_v0(SCStudyInterfaceRef sc)
 {
-  int& inited  = sc.GetPersistentInt(1);
-  if (sc.SetDefaults)
-  {
-    sc.GraphName = "ZONE_ENGINE_v0";
-    sc.AutoLoop = 0;
-    sc.UpdateAlways = 0;
-    sc.GraphRegion = 0;
-    sc.ValueFormat = 26;
-    sc.FreeDLL = 0;
-
+  if(sc.SetDefaults){
+    sc.GraphName="ZONE_ENGINE_v0"; sc.AutoLoop=0; sc.UpdateAlways=0; sc.GraphRegion=0; sc.ValueFormat=26; sc.FreeDLL=0;
     sc.Subgraph[1].Name = "SG01";
     sc.Subgraph[1].DrawStyle = DRAWSTYLE_IGNORE;
     sc.Subgraph[1].DrawZeros = false;
@@ -49,31 +40,10 @@ SCSFExport scsf_ZONE_ENGINE_v0(SCStudyInterfaceRef sc)
     sc.Subgraph[8].DrawStyle = DRAWSTYLE_IGNORE;
     sc.Subgraph[8].DrawZeros = false;
     sc.Subgraph[8].DisplayAsMainPriceGraphValue = 0;
-
-    sc.Input[0].Name = "01. Période principale";
-    sc.Input[0].SetInt(20); sc.Input[0].SetIntLimits(1, 100000);
-
-    sc.Input[1].Name = "02. Lookback barres";
-    sc.Input[1].SetInt(200); sc.Input[1].SetIntLimits(10, 200000);
-    sc.Input[2].Name = "03. % tolérance proximité";
-    sc.Input[2].SetFloat(0.05f);
-
-    sc.DrawZeros = false;
-    return;
+    sc.Input[0].Name="01. Référence: Close(0)"; sc.Input[0].SetYesNo(1);
+    sc.Input[1].Name="02. Largeur ticks"; sc.Input[1].SetFloat(4.0f);
+    sc.DrawZeros=false; return;
   }
-  if (!inited || sc.IsFullRecalculation) { inited = 1; }
-  if (sc.ArraySize <= 0) return;
-
-  const int per = sc.Input[0].GetInt();
-
-  const int lb = sc.Input[1].GetInt();
-  int start = sc.ArraySize - lb; if (start < 0) start = 0;
-  double hi=-1e300, lo=1e300;
-  for (int i=start;i<sc.ArraySize;++i){ if(sc.High[i]>hi) hi=sc.High[i]; if(sc.Low[i]<lo) lo=sc.Low[i]; }
-  int idx = sc.ArraySize-1;
-  double mid = 0.5*(hi+lo);
-  sc.Subgraph[1][idx] = mid;
-  sc.Subgraph[2][idx] = hi;
-  sc.Subgraph[3][idx] = lo;
-
+  if(sc.ArraySize<=0) return; int idx=sc.ArraySize-1; double ref = sc.Close[idx]; double w=sc.Input[1].GetFloat()*sc.TickSize;
+  sc.Subgraph[1][idx]=ref+w; sc.Subgraph[2][idx]=ref-w;
 }

@@ -51,7 +51,7 @@ inline double 	lrRecoveryHalfLife	(const double* depthSeries, int n)
 // -----------------------------------------------------------------------------
 // ===== v1 enrichi ============================================================
 // -----------------------------------------------------------------------------
-struct 			LrBands { int startNear=0, cntNear=10; int startMid=10, cntMid=20; int startFar=30, cntFar=30; };
+struct 			LrBands 			{ int startNear=0, cntNear=10; int startMid=10, cntMid=20; int startFar=30, cntFar=30; };
 
 struct 			LrParams
 {
@@ -62,7 +62,7 @@ struct 			LrParams
   int     seriesLen  = 64;   // taille max série depth pour recovery
 };
 
-enum 			LrPhase:int { LR_OK=0, LR_COLLAPSE=1, LR_RECOVERING=2 };
+enum 			LrPhase:int 		{ LR_OK=0, LR_COLLAPSE=1, LR_RECOVERING=2 };
 
 struct 			LrState
 {
@@ -83,14 +83,14 @@ struct 			LrState
 };
 
 // Utilitaires -----------------------------------------------------------------
-inline double 	lr_sum_range_read(const SCStudyInterfaceRef& sc, bool isBid, int start, int count)
+inline double 	lr_sum_range_read	(const SCStudyInterfaceRef& sc, bool isBid, int start, int count)
 {
   if (count<=0) return 0.0; if (start<0) start=0; const int e=start+count-1; double s=0.0;
   for (int li=start; li<=e; ++li) s += isBid? du::readBidQtyAt(sc,li) : du::readAskQtyAt(sc,li);
   return s;
 }
 
-inline bool 	lr_gates_ok(const SCStudyInterfaceRef& sc, const LrParams& p)
+inline bool 	lr_gates_ok			(const SCStudyInterfaceRef& sc, const LrParams& p)
 {
   if (p.requireFresh && du::domIsStale(sc)) return false;
   const int avail = sc.GetMarketDepthNumberOfLevels(); if (avail < p.minAvail) return false;
@@ -100,7 +100,7 @@ inline bool 	lr_gates_ok(const SCStudyInterfaceRef& sc, const LrParams& p)
 }
 
 // Mise à jour par tick. nowMs facultatif. Retourne true si collapse ou recovering détecté.
-inline bool 	lr_update_tick(SCStudyInterfaceRef sc, LrState& st, const LrParams& p, long long nowMs, int& outPhase)
+inline bool 	lr_update_tick		(SCStudyInterfaceRef sc, LrState& st, const LrParams& p, long long nowMs, int& outPhase)
 {
   outPhase = st.phase; st.tLast = nowMs; st.reset_soft();
   if (!lr_gates_ok(sc, p)) { st.phase = LR_OK; outPhase = st.phase; return false; }
@@ -147,7 +147,7 @@ inline bool 	lr_update_tick(SCStudyInterfaceRef sc, LrState& st, const LrParams&
 // 8 risk, 9 avail, 10 phase, 11 fracNear=near/total, 12 fracMid, 13 fracFar,
 // 14 collapseFlag(heur), 15 recoveryHL (échantillons)
 // -----------------------------------------------------------------------------
-inline int 	lr_features_v1(const LrState& st, const LrParams& /*p*/, double* out)
+inline int 	lr_features_v1			(const LrState& st, const LrParams& /*p*/, double* out)
 {
   if (!out) return 0; const double tot = std::max(1e-9, st.total);
   out[0] = du::sanitize(st.near);

@@ -1,22 +1,13 @@
 // ============================================================================
-// Pack v0 — Engines (v0) — complémentaires
+// Pack v0 — Engines v0 (compléments supplémentaires)
 // ============================================================================
 #include "sierrachart.h"
 #include "Pack_v0.h"
 
-
 SCSFExport scsf_FIBO_ENGINE_v0(SCStudyInterfaceRef sc)
 {
-  int& inited  = sc.GetPersistentInt(1);
-  if (sc.SetDefaults)
-  {
-    sc.GraphName = "FIBO_ENGINE_v0";
-    sc.AutoLoop = 0;
-    sc.UpdateAlways = 0;
-    sc.GraphRegion = 0;
-    sc.ValueFormat = 26;
-    sc.FreeDLL = 0;
-
+  if(sc.SetDefaults){
+    sc.GraphName="FIBO_ENGINE_v0"; sc.AutoLoop=0; sc.UpdateAlways=0; sc.GraphRegion=0; sc.ValueFormat=26; sc.FreeDLL=0;
     sc.Subgraph[1].Name = "SG01";
     sc.Subgraph[1].DrawStyle = DRAWSTYLE_IGNORE;
     sc.Subgraph[1].DrawZeros = false;
@@ -49,28 +40,12 @@ SCSFExport scsf_FIBO_ENGINE_v0(SCStudyInterfaceRef sc)
     sc.Subgraph[8].DrawStyle = DRAWSTYLE_IGNORE;
     sc.Subgraph[8].DrawZeros = false;
     sc.Subgraph[8].DisplayAsMainPriceGraphValue = 0;
-
-    sc.Input[0].Name = "01. Période principale";
-    sc.Input[0].SetInt(20); sc.Input[0].SetIntLimits(1, 100000);
-
-    sc.Input[1].Name = "02. Lookback barres";
-    sc.Input[1].SetInt(50); sc.Input[1].SetIntLimits(1, 100000);
-
-    sc.DrawZeros = false;
-    return;
+    sc.Input[0].Name="01. Lookback"; sc.Input[0].SetInt(100); sc.Input[0].SetIntLimits(10,200000);
+    sc.DrawZeros=false; return;
   }
-  if (!inited || sc.IsFullRecalculation) { inited = 1; }
-  if (sc.ArraySize <= 0) return;
-
-  const int per = sc.Input[0].GetInt();
-
-  const int lb = sc.Input[1].GetInt();
-  int start = sc.ArraySize - lb; if (start < 0) start = 0;
-  double hi=-1e300, lo=1e300;
-  for(int i=start;i<sc.ArraySize;++i){ if(sc.High[i]>hi) hi=sc.High[i]; if(sc.Low[i]<lo) lo=sc.Low[i]; }
-  double r = hi - lo; if (r<=0) return;
-  int idx = sc.ArraySize-1;
-  double levels[5] = {0.236,0.382,0.5,0.618,0.786};
-  for (int k=0;k<5;++k) sc.Subgraph[k+1][idx] = hi - r*levels[k];
-
+  if(sc.ArraySize<=0) return; int idx=sc.ArraySize-1; int lb=sc.Input[0].GetInt();
+  int s=idx-lb; if(s<0) s=0; double hi=-1e300, lo=1e300; for(int i=s;i<=idx;++i){ if(sc.High[i]>hi) hi=sc.High[i]; if(sc.Low[i]<lo) lo=sc.Low[i]; }
+  double r = hi-lo; if(r<=0) return;
+  double f382=hi-0.382*r, f618=hi-0.618*r, f786=hi-0.786*r;
+  sc.Subgraph[1][idx]=f382; sc.Subgraph[2][idx]=f618; sc.Subgraph[3][idx]=f786;
 }

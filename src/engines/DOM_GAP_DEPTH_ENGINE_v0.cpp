@@ -4,11 +4,10 @@
 #include "sierrachart.h"
 #include "Pack_v0.h"
 
-SCSFExport scsf_TAPE_PACE_ENGINE_v0(SCStudyInterfaceRef sc)
+SCSFExport scsf_DOM_GAP_DEPTH_ENGINE_v0(SCStudyInterfaceRef sc)
 {
-  int& inited=sc.GetPersistentInt(1); double& ema=sc.GetPersistentDouble(2);
   if(sc.SetDefaults){
-    sc.GraphName="TAPE_PACE_ENGINE_v0"; sc.AutoLoop=0; sc.UpdateAlways=1; sc.GraphRegion=0; sc.ValueFormat=26; sc.MaintainTimeAndSalesData=1; sc.FreeDLL=0;
+    sc.GraphName="DOM_GAP_DEPTH_ENGINE_v0"; sc.AutoLoop=0; sc.UpdateAlways=1; sc.GraphRegion=0; sc.ValueFormat=26; sc.UsesMarketDepthData=1; sc.FreeDLL=0;
     sc.Subgraph[1].Name = "SG01";
     sc.Subgraph[1].DrawStyle = DRAWSTYLE_IGNORE;
     sc.Subgraph[1].DrawZeros = false;
@@ -41,15 +40,16 @@ SCSFExport scsf_TAPE_PACE_ENGINE_v0(SCStudyInterfaceRef sc)
     sc.Subgraph[8].DrawStyle = DRAWSTYLE_IGNORE;
     sc.Subgraph[8].DrawZeros = false;
     sc.Subgraph[8].DisplayAsMainPriceGraphValue = 0;
-    sc.Input[0].Name="01. Fenêtre ms"; sc.Input[0].SetInt(1000); sc.Input[0].SetIntLimits(50,10000);
-    sc.Input[1].Name="02. EMA %"; sc.Input[1].SetInt(85); sc.Input[1].SetIntLimits(1,99);
+    sc.Input[0].Name="01. Scanner niveaux"; sc.Input[0].SetInt(40); sc.Input[0].SetIntLimits(1,60);
+    sc.Input[1].Name="02. Seuil gap qty"; sc.Input[1].SetInt(1); sc.Input[1].SetIntLimits(0,1000000);
     sc.DrawZeros=false; return;
   }
-  if(!inited||sc.IsFullRecalculation){ inited=1; ema=0; }
-  c_SCTimeAndSalesArray ts; sc.GetTimeAndSales(ts); if(ts.Size()==0 || sc.ArraySize==0) return;
-  int win=sc.Input[0].GetInt(); double a=sc.Input[1].GetInt()/100.0;
-  double tEnd=ts[ts.Size()-1].DateTime, tBeg=tEnd-win/86400000.0; int n=0;
-  for(int i=ts.Size()-1;i>=0;--i){ const auto& e=ts[i]; if(e.DateTime<tBeg) break; if(e.Type==SC_TS_TRADES) ++n; }
-  ema=a*n + (1-a)*ema;
-  sc.Subgraph[1][sc.ArraySize-1]=ema;
+  if(sc.TickSize<=0||sc.ArraySize<=0) return;
+  int N=sc.Input[0].GetInt(); int thr=sc.Input[1].GetInt();
+  s_MarketDepthEntry md{}; int gaps=0;
+  double last=0;
+  for(int i=0;i<sc.GetBidMarketDepthNumberOfLevels() && i<N;++i){ sc.GetBidMarketDepthEntryAtLevel(md,i); if(i>0 && md.Quantity==0 && last>thr) ++gaps; last=md.Quantity; }
+  last=0;
+  for(int i=0;i<sc.GetAskMarketDepthNumberOfLevels() && i<N;++i){ sc.GetAskMarketDepthEntryAtLevel(md,i); if(i>0 && md.Quantity==0 && last>thr) ++gaps; last=md.Quantity; }
+  sc.Subgraph[1][sc.ArraySize-1]=gaps;
 }

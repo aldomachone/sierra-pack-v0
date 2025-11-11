@@ -1,19 +1,14 @@
 // ============================================================================
-// Pack v0 — Engines (v0) — Suppléments
+// Pack v0 — Engines v0 (variants supplémentaires)
 // ============================================================================
 #include "sierrachart.h"
 #include "Pack_v0.h"
 
 SCSFExport scsf_DOM_SPOOFING_ENGINE_v0(SCStudyInterfaceRef sc)
 {
-  int& inited=sc.GetPersistentInt(1);
-
-  if(sc.SetDefaults)
-  {
-    sc.GraphName="DOM_SPOOFING_ENGINE_v0";
-    sc.AutoLoop=0; sc.UpdateAlways=1; sc.GraphRegion=0; sc.ValueFormat=26; sc.FreeDLL=0;
-    sc.UsesMarketDepthData=1;
-
+  int& inited=sc.GetPersistentInt(1); int& phase=sc.GetPersistentInt(2); double& peak=sc.GetPersistentDouble(3);
+  if(sc.SetDefaults){
+    sc.GraphName="DOM_SPOOFING_ENGINE_v0"; sc.AutoLoop=0; sc.UpdateAlways=1; sc.GraphRegion=0; sc.ValueFormat=26; sc.UsesMarketDepthData=1; sc.FreeDLL=0;
     sc.Subgraph[1].Name = "SG01";
     sc.Subgraph[1].DrawStyle = DRAWSTYLE_IGNORE;
     sc.Subgraph[1].DrawZeros = false;
@@ -46,62 +41,17 @@ SCSFExport scsf_DOM_SPOOFING_ENGINE_v0(SCStudyInterfaceRef sc)
     sc.Subgraph[8].DrawStyle = DRAWSTYLE_IGNORE;
     sc.Subgraph[8].DrawZeros = false;
     sc.Subgraph[8].DisplayAsMainPriceGraphValue = 0;
-    sc.Subgraph[9].Name = "SG09";
-    sc.Subgraph[9].DrawStyle = DRAWSTYLE_IGNORE;
-    sc.Subgraph[9].DrawZeros = false;
-    sc.Subgraph[9].DisplayAsMainPriceGraphValue = 0;
-    sc.Subgraph[10].Name = "SG10";
-    sc.Subgraph[10].DrawStyle = DRAWSTYLE_IGNORE;
-    sc.Subgraph[10].DrawZeros = false;
-    sc.Subgraph[10].DisplayAsMainPriceGraphValue = 0;
-    sc.Subgraph[11].Name = "SG11";
-    sc.Subgraph[11].DrawStyle = DRAWSTYLE_IGNORE;
-    sc.Subgraph[11].DrawZeros = false;
-    sc.Subgraph[11].DisplayAsMainPriceGraphValue = 0;
-    sc.Subgraph[12].Name = "SG12";
-    sc.Subgraph[12].DrawStyle = DRAWSTYLE_IGNORE;
-    sc.Subgraph[12].DrawZeros = false;
-    sc.Subgraph[12].DisplayAsMainPriceGraphValue = 0;
-    sc.Subgraph[13].Name = "SG13";
-    sc.Subgraph[13].DrawStyle = DRAWSTYLE_IGNORE;
-    sc.Subgraph[13].DrawZeros = false;
-    sc.Subgraph[13].DisplayAsMainPriceGraphValue = 0;
-    sc.Subgraph[14].Name = "SG14";
-    sc.Subgraph[14].DrawStyle = DRAWSTYLE_IGNORE;
-    sc.Subgraph[14].DrawZeros = false;
-    sc.Subgraph[14].DisplayAsMainPriceGraphValue = 0;
-    sc.Subgraph[15].Name = "SG15";
-    sc.Subgraph[15].DrawStyle = DRAWSTYLE_IGNORE;
-    sc.Subgraph[15].DrawZeros = false;
-    sc.Subgraph[15].DisplayAsMainPriceGraphValue = 0;
-    sc.Subgraph[16].Name = "SG16";
-    sc.Subgraph[16].DrawStyle = DRAWSTYLE_IGNORE;
-    sc.Subgraph[16].DrawZeros = false;
-    sc.Subgraph[16].DisplayAsMainPriceGraphValue = 0;
-
-    sc.Input[0].Name="01. Niveaux à scanner";
-    sc.Input[0].SetInt(20); sc.Input[0].SetIntLimits(1,60);
-    sc.Input[1].Name="02. Seuil spike qty";
-    sc.Input[1].SetInt(200); sc.Input[1].SetIntLimits(1,10000000);
-    sc.Input[2].Name="03. Demi-vie ms annulation";
-    sc.Input[2].SetInt(600); sc.Input[2].SetIntLimits(50,5000);
-
+    sc.Input[0].Name="01. Near niveaux"; sc.Input[0].SetInt(10); sc.Input[0].SetIntLimits(1,60);
+    sc.Input[1].Name="02. Δqty min"; sc.Input[1].SetInt(200); sc.Input[1].SetIntLimits(1,1000000);
+    sc.Input[2].Name="03. Fenêtre détection ticks"; sc.Input[2].SetInt(10); sc.Input[2].SetIntLimits(1,100000);
     sc.DrawZeros=false; return;
   }
-
-  if(!inited || sc.IsFullRecalculation) inited=1;
+  if(!inited||sc.IsFullRecalculation){ inited=1; phase=0; peak=0; }
   if(sc.TickSize<=0) return;
-
-  int N=sc.Input[0].GetInt(); int thr=sc.Input[1].GetInt();
-
-  s_MarketDepthEntry md{};
-  double spikes=0;
-  for(int i=0;i<sc.GetBidMarketDepthNumberOfLevels() && i<N;++i){ sc.GetBidMarketDepthEntryAtLevel(md,i); if(md.Quantity>=thr) spikes+=1; }
-  for(int i=0;i<sc.GetAskMarketDepthNumberOfLevels() && i<N;++i){ sc.GetAskMarketDepthEntryAtLevel(md,i); if(md.Quantity>=thr) spikes+=1; }
-
-  static double prevSpikes=0;
-  double score = (spikes>prevSpikes? spikes - prevSpikes : 0.0);
-  prevSpikes = spikes;
-
-  int idx=sc.ArraySize-1; if(idx>=0) sc.Subgraph[1][idx]=score;
+  int N=sc.Input[0].GetInt(); int thr=sc.Input[1].GetInt(); int win=sc.Input[2].GetInt();
+  s_MarketDepthEntry md{}; double sum=0; static double prev=0; static int age=0;
+  for(int i=0;i<sc.GetAskMarketDepthNumberOfLevels() && i<N;++i){ sc.GetAskMarketDepthEntryAtLevel(md,i); sum+=md.Quantity; }
+  double d=sum-prev; prev=sum; if(age<win) ++age;
+  if(phase==0 && d>thr){ phase=1; peak=sum; age=0; }
+  else if(phase==1 && (prev<peak-thr || age>=win)){ int spoof = (prev<peak-thr? 1:0); sc.Subgraph[1][sc.ArraySize-1]=spoof; phase=0; peak=0; age=0; }
 }
