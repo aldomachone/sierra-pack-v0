@@ -3,7 +3,7 @@
 
 /*
 ===============================================================================
- PackUtilitaires_v0.h — Umbrella headers (v6)
+ PackUtilitaires_v0.h — Umbrella headers (v7)
 
  Rôle:
  - Point d'entrée unique pour tous les Utilitaire*.h du Pack_v0.
@@ -18,6 +18,10 @@ How to use (résumé):
       #define PACK_V0_ENABLE_DOM      1   // DOM on
       #define PACK_V0_ENABLE_TAPE     0   // TAPE off
       #define PACK_V0_ENABLE_CONTEXTE 1   // CONTEXTE on
+      #include "PackUtilitaires_v0.h"
+
+ - Ou en utilisant un profil pré-défini:
+      #define PACK_V0_PROFILE_DOM_ONLY
       #include "PackUtilitaires_v0.h"
 
  - Pour forcer les fallback unitaires (ignorer UtilitaireTape.h / Contexte.h):
@@ -69,7 +73,150 @@ Matrice de builds à tester (QA minimale):
 #endif
 
 // ============================================================================
-// Toggles familles (toutes les macros sont préfixées PACK_V0_ ou DU_)
+// Helper __has_include standardisé
+// ============================================================================
+
+#ifndef PACK_V0_HAS_INCLUDE
+  #if defined(__has_include)
+    #define PACK_V0_HAS_INCLUDE(x) __has_include(x)
+  #else
+    #define PACK_V0_HAS_INCLUDE(x) 0
+  #endif
+#endif
+
+// Agrégateurs potentiellement disponibles (indépendamment de PACK_V0_USE_AGGREGATORS)
+#if PACK_V0_HAS_INCLUDE("UtilitaireTape.h")
+  #define PACK_V0_TAPE_AGGREGATOR_AVAILABLE 1
+#endif
+
+#if PACK_V0_HAS_INCLUDE("UtilitaireContexte.h")
+  #define PACK_V0_CTX_AGGREGATOR_AVAILABLE 1
+#endif
+
+#if PACK_V0_HAS_INCLUDE("UtilitaireDomPack.h")
+  #define PACK_V0_DOM_AGGREGATOR_AVAILABLE 1
+#endif
+
+// ============================================================================
+// Profils pré-définis (facultatifs)
+// - Chaque profil ne définit un PACK_V0_ENABLE_* que s'il n'est PAS déjà défini,
+//   ce qui permet de surcharger un flag à la main après coup.
+// ============================================================================
+
+// FULL_PACK : tous ON (c'est déjà le défaut, mais explicite si besoin)
+#if defined(PACK_V0_PROFILE_FULL_PACK)
+  #ifndef PACK_V0_ENABLE_CORE
+    #define PACK_V0_ENABLE_CORE 1
+  #endif
+  #ifndef PACK_V0_ENABLE_MLP
+    #define PACK_V0_ENABLE_MLP 1
+  #endif
+  #ifndef PACK_V0_ENABLE_DOM
+    #define PACK_V0_ENABLE_DOM 1
+  #endif
+  #ifndef PACK_V0_ENABLE_TAPE
+    #define PACK_V0_ENABLE_TAPE 1
+  #endif
+  #ifndef PACK_V0_ENABLE_CONTEXTE
+    #define PACK_V0_ENABLE_CONTEXTE 1
+  #endif
+  #ifndef PACK_V0_ENABLE_ZONES
+    #define PACK_V0_ENABLE_ZONES 1
+  #endif
+  #ifndef PACK_V0_ENABLE_MTF
+    #define PACK_V0_ENABLE_MTF 1
+  #endif
+  #ifndef PACK_V0_ENABLE_MEMORY_RISK
+    #define PACK_V0_ENABLE_MEMORY_RISK 1
+  #endif
+#endif
+
+// DOM_ONLY : CORE + DOM uniquement
+#if defined(PACK_V0_PROFILE_DOM_ONLY)
+  #ifndef PACK_V0_ENABLE_CORE
+    #define PACK_V0_ENABLE_CORE 1
+  #endif
+  #ifndef PACK_V0_ENABLE_MLP
+    #define PACK_V0_ENABLE_MLP 0
+  #endif
+  #ifndef PACK_V0_ENABLE_DOM
+    #define PACK_V0_ENABLE_DOM 1
+  #endif
+  #ifndef PACK_V0_ENABLE_TAPE
+    #define PACK_V0_ENABLE_TAPE 0
+  #endif
+  #ifndef PACK_V0_ENABLE_CONTEXTE
+    #define PACK_V0_ENABLE_CONTEXTE 0
+  #endif
+  #ifndef PACK_V0_ENABLE_ZONES
+    #define PACK_V0_ENABLE_ZONES 0
+  #endif
+  #ifndef PACK_V0_ENABLE_MTF
+    #define PACK_V0_ENABLE_MTF 0
+  #endif
+  #ifndef PACK_V0_ENABLE_MEMORY_RISK
+    #define PACK_V0_ENABLE_MEMORY_RISK 0
+  #endif
+#endif
+
+// TAPE_ONLY : CORE + TAPE uniquement
+#if defined(PACK_V0_PROFILE_TAPE_ONLY)
+  #ifndef PACK_V0_ENABLE_CORE
+    #define PACK_V0_ENABLE_CORE 1
+  #endif
+  #ifndef PACK_V0_ENABLE_MLP
+    #define PACK_V0_ENABLE_MLP 0
+  #endif
+  #ifndef PACK_V0_ENABLE_DOM
+    #define PACK_V0_ENABLE_DOM 0
+  #endif
+  #ifndef PACK_V0_ENABLE_TAPE
+    #define PACK_V0_ENABLE_TAPE 1
+  #endif
+  #ifndef PACK_V0_ENABLE_CONTEXTE
+    #define PACK_V0_ENABLE_CONTEXTE 0
+  #endif
+  #ifndef PACK_V0_ENABLE_ZONES
+    #define PACK_V0_ENABLE_ZONES 0
+  #endif
+  #ifndef PACK_V0_ENABLE_MTF
+    #define PACK_V0_ENABLE_MTF 0
+  #endif
+  #ifndef PACK_V0_ENABLE_MEMORY_RISK
+    #define PACK_V0_ENABLE_MEMORY_RISK 0
+  #endif
+#endif
+
+// CONTEXT_ONLY : CORE + CONTEXTE + ZONES + MTF
+#if defined(PACK_V0_PROFILE_CONTEXT_ONLY)
+  #ifndef PACK_V0_ENABLE_CORE
+    #define PACK_V0_ENABLE_CORE 1
+  #endif
+  #ifndef PACK_V0_ENABLE_MLP
+    #define PACK_V0_ENABLE_MLP 0
+  #endif
+  #ifndef PACK_V0_ENABLE_DOM
+    #define PACK_V0_ENABLE_DOM 0
+  #endif
+  #ifndef PACK_V0_ENABLE_TAPE
+    #define PACK_V0_ENABLE_TAPE 0
+  #endif
+  #ifndef PACK_V0_ENABLE_CONTEXTE
+    #define PACK_V0_ENABLE_CONTEXTE 1
+  #endif
+  #ifndef PACK_V0_ENABLE_ZONES
+    #define PACK_V0_ENABLE_ZONES 1
+  #endif
+  #ifndef PACK_V0_ENABLE_MTF
+    #define PACK_V0_ENABLE_MTF 1
+  #endif
+  #ifndef PACK_V0_ENABLE_MEMORY_RISK
+    #define PACK_V0_ENABLE_MEMORY_RISK 0
+  #endif
+#endif
+
+// ============================================================================
+// Toggles familles (défauts si rien n'est défini)
 // ============================================================================
 
 #ifndef PACK_V0_ENABLE_CORE
@@ -121,8 +268,6 @@ Matrice de builds à tester (QA minimale):
   #error "Pack_v0: PACK_V0_ENABLE_MLP=1 requiert PACK_V0_ENABLE_CORE=1."
 #endif
 
-// (On pourrait ajouter ici d'autres static_assert si nécessaire à l'avenir.)
-
 // ============================================================================
 // LOG_ONCE — garantie globale
 // ============================================================================
@@ -136,12 +281,12 @@ Matrice de builds à tester (QA minimale):
 
 // ============================================================================
 // CORE
+// ============================================================================
 // - UtilitaireACSILCore : wrappers SC / types communs
 // - UtilitaireTempo     : nowMs, jitter clamp, clock skew
 // - UtilitaireSanitize  : clamp, anti-NaN/Inf
 // - UtilitaireCompat    : SG/inputs/featSig compat
 // - UtilitaireEngineContract : conventions engines/signaux
-// ============================================================================
 
 #if PACK_V0_ENABLE_CORE
   #include "UtilitaireACSILCore.h"
@@ -173,8 +318,8 @@ Matrice de builds à tester (QA minimale):
 
 // ============================================================================
 // MLP / I/O
-// - UtilitaireMLP : CSV/BIN, #META/#PARAMS, featSig, rotation, Snappy éventuel
 // ============================================================================
+// - UtilitaireMLP : CSV/BIN, #META/#PARAMS, featSig, rotation, Snappy éventuel
 
 #if PACK_V0_ENABLE_MLP
   #include "UtilitaireMLP.h"
@@ -182,24 +327,20 @@ Matrice de builds à tester (QA minimale):
 
 // ============================================================================
 // TAPE
+// ============================================================================
 // - Agrégateur UtilitaireTape.h si présent (DU_TAPE_PACK_VER >= 1).
-//   Contrat minimal: 
+//   Contrat minimal:
 //     #define DU_TAPE_PACK_VER 1
 //     namespace du::tape {
 //       struct OffsetsV1;
 //       OffsetsV1 plan_offsets_v1();
 //     }
 // - Fallback unitaire: Pace / BVC / Sweep / Exhaust.
-// ============================================================================
 
 #if PACK_V0_ENABLE_TAPE
-  #if PACK_V0_USE_AGGREGATORS
-    #if defined(__has_include)
-      #if __has_include("UtilitaireTape.h")
-        #define DU_TAPE_PACK_HEADER_PRESENT 1
-        #include "UtilitaireTape.h"
-      #endif
-    #endif
+  #if PACK_V0_USE_AGGREGATORS && PACK_V0_HAS_INCLUDE("UtilitaireTape.h")
+    #define DU_TAPE_PACK_HEADER_PRESENT 1
+    #include "UtilitaireTape.h"
   #endif
 
   #ifndef DU_TAPE_PACK_VER
@@ -215,6 +356,7 @@ Matrice de builds à tester (QA minimale):
 
 // ============================================================================
 // CONTEXTE
+// ============================================================================
 // - Agrégateur UtilitaireContexte.h si présent (DU_CTX_PACK_VER >= 1).
 //   Contrat minimal:
 //     #define DU_CTX_PACK_VER 1
@@ -227,16 +369,11 @@ Matrice de builds à tester (QA minimale):
 //
 // - Fallback "contexte large": VWAP / PROFILE / OHLC / RANGES, plus zones
 //   (Pivots/Fibo/Reload/FVG/Zones) et MTF.
-// ============================================================================
 
 #if PACK_V0_ENABLE_CONTEXTE
-  #if PACK_V0_USE_AGGREGATORS
-    #if defined(__has_include)
-      #if __has_include("UtilitaireContexte.h")
-        #define DU_CTX_PACK_HEADER_PRESENT 1
-        #include "UtilitaireContexte.h"
-      #endif
-    #endif
+  #if PACK_V0_USE_AGGREGATORS && PACK_V0_HAS_INCLUDE("UtilitaireContexte.h")
+    #define DU_CTX_PACK_HEADER_PRESENT 1
+    #include "UtilitaireContexte.h"
   #endif
 
   #ifndef DU_CTX_PACK_VER
@@ -260,10 +397,10 @@ Matrice de builds à tester (QA minimale):
 
 // ============================================================================
 // ZONES / NIVEAUX
-// - Pivots, Fibo, Reload, FVG, Zones, Confluence.
-// - NB: il y a recouvrement avec le fallback CONTEXTE (qui inclut déjà certains
-//   headers de zones). Les include guards des Utilitaire*.h évitent les doublons.
 // ============================================================================
+// - Pivots, Fibo, Reload, FVG, Zones, Confluence.
+// - NB: recouvrement avec le fallback CONTEXTE (qui inclut déjà certains
+//   headers de zones). Les include guards des Utilitaire*.h évitent les doublons.
 
 #if PACK_V0_ENABLE_ZONES
   #include "UtilitairePivots.h"
@@ -276,11 +413,11 @@ Matrice de builds à tester (QA minimale):
 
 // ============================================================================
 // MTF / OVERLAY
+// ============================================================================
 // - UtilitaireMTF : logique multi-timeframe.
 // - UtilitaireOverlay : helpers overlay, lag_ms, validity flags.
 // - DU_PACK_MTF_INCLUDED_FROM_CTX peut être défini par le fallback CONTEXTE ou
 //   par UtilitaireContexte.h si ce dernier inclut déjà UtilitaireMTF.h.
-// ============================================================================
 
 #if PACK_V0_ENABLE_MTF
   #if !defined(DU_PACK_MTF_INCLUDED_FROM_CTX)
@@ -291,10 +428,10 @@ Matrice de builds à tester (QA minimale):
 
 // ============================================================================
 // MÉMOIRE / RÉPONSE / RISQUE
+// ============================================================================
 // - UtilitaireMDHG   : mémoire DOM (heatmap globale).
 // - UtilitairePRF    : post-response feature.
 // - UtilitaireLiqRisk: risque de liquidité / collapses / recovery.
-// ============================================================================
 
 #if PACK_V0_ENABLE_MEMORY_RISK
   #include "UtilitaireMDHG.h"
@@ -304,21 +441,17 @@ Matrice de builds à tester (QA minimale):
 
 // ============================================================================
 // DOM — Microstructure rapide
+// ============================================================================
 // - Option pack DOM (UtilitaireDomPack.h) via PACK_V0_ENABLE_DOM_PACK.
 //   Contrat minimal:
 //     #define DU_DOM_PACK_VER 1
 //     // (interfaces exposées à définir dans UtilitaireDomPack.h)
 // - Fallback unitaire: UtilitaireDom*, ImbalSweep, Momentum, Vacuum, StopRun.
-// ============================================================================
 
 #if PACK_V0_ENABLE_DOM
-  #if PACK_V0_ENABLE_DOM_PACK && PACK_V0_USE_AGGREGATORS
-    #if defined(__has_include)
-      #if __has_include("UtilitaireDomPack.h")
-        #define DU_DOM_PACK_HEADER_PRESENT 1
-        #include "UtilitaireDomPack.h"
-      #endif
-    #endif
+  #if PACK_V0_ENABLE_DOM_PACK && PACK_V0_USE_AGGREGATORS && PACK_V0_HAS_INCLUDE("UtilitaireDomPack.h")
+    #define DU_DOM_PACK_HEADER_PRESENT 1
+    #include "UtilitaireDomPack.h"
   #endif
 
   #ifndef DU_DOM_PACK_VER
@@ -335,12 +468,35 @@ Matrice de builds à tester (QA minimale):
 #endif
 
 // ============================================================================
+// Mode "self-test" (optionnel) — cohérence SCHEMA_REV vs DU_*_PACK_VER
+// ============================================================================
+// - Active des static_assert plus stricts pour vérifier la cohérence entre
+//   PACK_V0_SCHEMA_REV et les versions de packs agrégés (TAPE / CONTEXTE / DOM).
+
+#if defined(PACK_V0_SELFTEST)
+  #if defined(DU_TAPE_PACK_VER)
+    static_assert(DU_TAPE_PACK_VER >= PACK_V0_SCHEMA_REV,
+                  "Pack_v0 selftest: DU_TAPE_PACK_VER < PACK_V0_SCHEMA_REV.");
+  #endif
+  #if defined(DU_CTX_PACK_VER)
+    static_assert(DU_CTX_PACK_VER >= PACK_V0_SCHEMA_REV,
+                  "Pack_v0 selftest: DU_CTX_PACK_VER < PACK_V0_SCHEMA_REV.");
+  #endif
+  #if defined(DU_DOM_PACK_VER)
+    static_assert(DU_DOM_PACK_VER >= PACK_V0_SCHEMA_REV,
+                  "Pack_v0 selftest: DU_DOM_PACK_VER < PACK_V0_SCHEMA_REV.");
+  #endif
+#endif
+
+// ============================================================================
 // Espace du::pack — introspection pack
+// ============================================================================
 // - Helpers constexpr pour savoir ce qui est compilé.
 // - Accès aux OffsetsV1 des agrégateurs TAPE/CONTEXTE si disponibles.
 // - Métadonnées pack (version, schema, featSig v1).
 // - log_config(sc) pour logguer la config effective une fois par chart.
-// ============================================================================
+// - require_dom(sc) pour vérifier facilement qu'une étude DOM est bien compilée
+//   avec PACK_V0_ENABLE_DOM=1.
 
 namespace du { namespace pack {
 
@@ -400,6 +556,26 @@ namespace du { namespace pack {
     s += " memrisk=";
     s += has_memrisk();
     PACK_V0_LOG_ONCE(sc, "PACK_V0_CONFIG", s);
+
+    // Logs d'agrégateurs ignorés (header présent mais PACK_V0_USE_AGGREGATORS=0)
+    #if defined(PACK_V0_TAPE_AGGREGATOR_AVAILABLE) && !PACK_V0_USE_AGGREGATORS
+      PACK_V0_LOG_ONCE(sc, "PACK_V0_TAPE_AGG_IGNORED",
+                       "UtilitaireTape.h détecté mais PACK_V0_USE_AGGREGATORS=0 (fallback unitaires activé).");
+    #endif
+    #if defined(PACK_V0_CTX_AGGREGATOR_AVAILABLE) && !PACK_V0_USE_AGGREGATORS
+      PACK_V0_LOG_ONCE(sc, "PACK_V0_CTX_AGG_IGNORED",
+                       "UtilitaireContexte.h détecté mais PACK_V0_USE_AGGREGATORS=0 (fallback unitaires activé).");
+    #endif
+  }
+
+  // Helper d'usage: vérifier qu'une étude DOM est bien compilée avec DOM activé.
+  inline bool require_dom(SCStudyInterfaceRef sc){
+    if (!has_dom()){
+      PACK_V0_LOG_ONCE(sc, "PACK_V0_REQUIRE_DOM",
+                       "Cette étude attend PACK_V0_ENABLE_DOM=1 dans PackUtilitaires_v0.h.");
+      return false;
+    }
+    return true;
   }
 
 }} // namespace du::pack
