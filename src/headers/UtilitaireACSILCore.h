@@ -137,17 +137,17 @@ inline double 		GetAskPriceAtLevel			(const SCStudyInterfaceRef sc, int level			
 }
 inline int 			GetBidSizeAtLevel			(const SCStudyInterfaceRef sc, int level							)
 {
-  s_MarketDepthEntry e;
-  if (!GetBidEntry(sc, level, e))
-    return 0;
-  return e.Quantity;
+  s_MarketDepthEntry e				;
+  if (!GetBidEntry	(sc, level, e)	)
+		return 0					;
+		return e.Quantity			;
 }
 inline int 			GetAskSizeAtLevel			(const SCStudyInterfaceRef sc, int level							)
 {
-  s_MarketDepthEntry e;
-  if (!GetAskEntry(sc, level, e))
-    return 0;
-  return e.Quantity;
+  s_MarketDepthEntry e				;
+  if (!GetAskEntry	(sc, level, e)	)
+		return 0					;
+		return e.Quantity			;
 }
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////// Time & Sales (accès minimal)
 inline bool 		HasTimeAndSales				(const SCStudyInterfaceRef sc										)	{return sc.MaintainTimeAndSalesData != 0										;	}
@@ -180,9 +180,7 @@ inline void			DisableStudyWindows			(SCStudyInterfaceRef sc)
   sc.DisplayStudyInputValues			= 0		;
   sc.DisplayStudyValues 				= 0		;
 }
-inline void			DisableSubgraphWindows		(SCStudyInterfaceRef sc)
-{
-  for (int i = 0; i < SC_MAX_NUM_STUDY_SUBGRAPHS; ++i)
+inline void			DisableSubgraphWindows		(SCStudyInterfaceRef sc)												{for (int i = 0; i < SC_MAX_NUM_STUDY_SUBGRAPHS; ++i)
   {
     SCSubgraphRef sg 					= sc.Subgraph[i]	;
     sg.DisplayNameValueInWindowsFlags 	= 0					;

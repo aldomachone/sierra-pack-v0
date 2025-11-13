@@ -72,6 +72,13 @@ Matrice de builds à tester (QA minimale):
   #define PACK_V0_FEATSIG_V1   1
 #endif
 
+
+// Layout global des features MLP v1 (référence commune à tout le pack).
+// Déclarations seulement : la définition du tableau sera dans un .cpp dédié.
+// Ces symboles sont neutres si MLP est désactivé.
+constexpr int PACK_V0_FEATCOUNT_V1 = 96;
+extern const char* const PACK_V0_FeatNamesV1[PACK_V0_FEATCOUNT_V1];
+
 // ============================================================================
 // Helper __has_include standardisé
 // ============================================================================

@@ -1,6 +1,5 @@
 #pragma once
 #include "sierrachart.h"
-
 // ============================================================================
 // UtilitaireEngineContract.h — Contrat SG / Features v1 (Pack_v0)
 //
@@ -36,7 +35,6 @@
 // Chaque ENGINE vit dans sa propre étude ACSIL, donc pas de conflit de SG
 // entre familles, seulement un contrat par ENGINE.
 // ============================================================================
-
 namespace du {
 
 // ============================================================================
@@ -53,23 +51,23 @@ namespace du {
 #endif
 
 // Contrat courant : schéma et featSig v1 uniquement
-constexpr int DU_SCHEMA_REV_ENGINECONTRACT = 1;
-constexpr int DU_FEATSIG_V1_ENGINECONTRACT = 1;
+constexpr int 			DU_SCHEMA_REV_ENGINECONTRACT = 1;
+constexpr int 			DU_FEATSIG_V1_ENGINECONTRACT = 1;
 
-static_assert(PACK_V0_SCHEMA_REV >= DU_SCHEMA_REV_ENGINECONTRACT,
+static_assert			(PACK_V0_SCHEMA_REV >= DU_SCHEMA_REV_ENGINECONTRACT,
               "Pack_v0: PACK_V0_SCHEMA_REV trop ancien pour UtilitaireEngineContract.h");
 
-static_assert(PACK_V0_FEATSIG_V1 == DU_FEATSIG_V1_ENGINECONTRACT,
+static_assert			(PACK_V0_FEATSIG_V1 == DU_FEATSIG_V1_ENGINECONTRACT,
               "Pack_v0: UtilitaireEngineContract.h est conçu pour FEATSIG v1 uniquement.");
 
 // ============================================================================
 // 2) Plages de Subgraphs par ENGINE (mapping v1 figé)
 // ============================================================================
 
-constexpr int DU_SG_MAX = 24;
+constexpr int 			DU_SG_MAX = 24;
 
 // Plage générique
-struct DU_SgRange {
+struct 					DU_SgRange {
   int first;
   int last;
 
@@ -79,42 +77,42 @@ struct DU_SgRange {
 };
 
 // Raccourcis de plages standard
-constexpr DU_SgRange DU_SG_1_8()  noexcept { return { 1,  8}; }
-constexpr DU_SgRange DU_SG_1_16() noexcept { return { 1, 16}; }
-constexpr DU_SgRange DU_SG_1_24() noexcept { return { 1, 24}; }
+constexpr 				DU_SgRange DU_SG_1_8	()	noexcept { return { 1,  8}; }
+constexpr 				DU_SgRange DU_SG_1_16	()	noexcept { return { 1, 16}; }
+constexpr 				DU_SgRange DU_SG_1_24	()	noexcept { return { 1, 24}; }
 
 // Mapping canonique par ENGINE (v1)
 // DOM_ENGINE_V2
-constexpr DU_SgRange DU_SG_DOM()     noexcept { return DU_SG_1_24(); }
+constexpr 				DU_SgRange DU_SG_DOM	()	noexcept { return DU_SG_1_24(); }
 
 // TAPE_ENGINE_V1
-constexpr DU_SgRange DU_SG_TAPE()    noexcept { return DU_SG_1_16(); }
+constexpr 				DU_SgRange DU_SG_TAPE()    noexcept { return DU_SG_1_16(); }
 
 // Contexte lent (VWAP / PROFILE / OHLC / RANGE / PIVOT / FIBO / FVG / ZONE)
 // Chaque ENGINE de contexte utilise indépendamment SG 1..8 dans son propre study.
-constexpr DU_SgRange DU_SG_VWAP()    noexcept { return DU_SG_1_8(); }
-constexpr DU_SgRange DU_SG_PROFILE() noexcept { return DU_SG_1_8(); }
-constexpr DU_SgRange DU_SG_OHLC()    noexcept { return DU_SG_1_8(); }
-constexpr DU_SgRange DU_SG_RANGE()   noexcept { return DU_SG_1_8(); }
-constexpr DU_SgRange DU_SG_PIVOT()   noexcept { return DU_SG_1_8(); }
-constexpr DU_SgRange DU_SG_FIBO()    noexcept { return DU_SG_1_8(); }
-constexpr DU_SgRange DU_SG_FVG()     noexcept { return DU_SG_1_8(); }
-constexpr DU_SgRange DU_SG_ZONE()    noexcept { return DU_SG_1_8(); }
+constexpr 				DU_SgRange DU_SG_VWAP()    noexcept { return DU_SG_1_8(); }
+constexpr 				DU_SgRange DU_SG_PROFILE() noexcept { return DU_SG_1_8(); }
+constexpr 				DU_SgRange DU_SG_OHLC()    noexcept { return DU_SG_1_8(); }
+constexpr 				DU_SgRange DU_SG_RANGE()   noexcept { return DU_SG_1_8(); }
+constexpr 				DU_SgRange DU_SG_PIVOT()   noexcept { return DU_SG_1_8(); }
+constexpr 				DU_SgRange DU_SG_FIBO()    noexcept { return DU_SG_1_8(); }
+constexpr 				DU_SgRange DU_SG_FVG()     noexcept { return DU_SG_1_8(); }
+constexpr 				DU_SgRange DU_SG_ZONE()    noexcept { return DU_SG_1_8(); }
 
 // Alias "historiques" pour compatibilité (CONTEXTE / ZONES génériques)
-constexpr DU_SgRange DU_SG_CONTEXT() noexcept { return DU_SG_1_8(); }
-constexpr DU_SgRange DU_SG_ZONES()   noexcept { return DU_SG_1_8(); }
+constexpr 				DU_SgRange DU_SG_CONTEXT() noexcept { return DU_SG_1_8(); }
+constexpr 				DU_SgRange DU_SG_ZONES()   noexcept { return DU_SG_1_8(); }
 
 // Mémoire / Réponse / Risque
-constexpr DU_SgRange DU_SG_MDHG()    noexcept { return DU_SG_1_16(); } // Mémoire DOM (heatmap)
-constexpr DU_SgRange DU_SG_PRF()     noexcept { return DU_SG_1_8();  } // Réponse prix
-constexpr DU_SgRange DU_SG_LIQ()     noexcept { return DU_SG_1_8();  } // Risque de liquidité
+constexpr 				DU_SgRange DU_SG_MDHG()    noexcept { return DU_SG_1_16(); } // Mémoire DOM (heatmap)
+constexpr 				DU_SgRange DU_SG_PRF()     noexcept { return DU_SG_1_8();  } // Réponse prix
+constexpr 				DU_SgRange DU_SG_LIQ()     noexcept { return DU_SG_1_8();  } // Risque de liquidité
 
 // ============================================================================
 // 2 bis) Enum symbolique des familles (EngineFamily)
 // ============================================================================
 
-enum class EngineFamily : int
+enum class 				EngineFamily : int
 {
   Dom,
   Tape,
@@ -133,7 +131,7 @@ enum class EngineFamily : int
   Liq
 };
 
-constexpr const char* duEngineFamilyName(EngineFamily f) noexcept
+constexpr const char* 	duEngineFamilyName		(EngineFamily f) 	noexcept
 {
   switch (f)
   {
@@ -156,7 +154,7 @@ constexpr const char* duEngineFamilyName(EngineFamily f) noexcept
   }
 }
 
-constexpr DU_SgRange duGetRange(EngineFamily f) noexcept
+constexpr 				DU_SgRange duGetRange	(EngineFamily f)	noexcept
 {
   switch (f)
   {
@@ -182,44 +180,43 @@ constexpr DU_SgRange duGetRange(EngineFamily f) noexcept
 // ============================================================================
 // 3) Vérifications compile-time (cohérence interne du contrat)
 // ============================================================================
+constexpr int			duSgCount(DU_SgRange r) noexcept { return r.count(); }
 
-constexpr int duSgCount(DU_SgRange r) noexcept { return r.count(); }
-
-static_assert(DU_SG_DOM().last    <= DU_SG_MAX, "DU_SG_DOM dépasse DU_SG_MAX");
-static_assert(DU_SG_TAPE().last   <= DU_SG_MAX, "DU_SG_TAPE dépasse DU_SG_MAX");
-static_assert(DU_SG_VWAP().last   <= DU_SG_MAX, "DU_SG_VWAP dépasse DU_SG_MAX");
-static_assert(DU_SG_PROFILE().last<= DU_SG_MAX, "DU_SG_PROFILE dépasse DU_SG_MAX");
-static_assert(DU_SG_OHLC().last   <= DU_SG_MAX, "DU_SG_OHLC dépasse DU_SG_MAX");
-static_assert(DU_SG_RANGE().last  <= DU_SG_MAX, "DU_SG_RANGE dépasse DU_SG_MAX");
-static_assert(DU_SG_PIVOT().last  <= DU_SG_MAX, "DU_SG_PIVOT dépasse DU_SG_MAX");
-static_assert(DU_SG_FIBO().last   <= DU_SG_MAX, "DU_SG_FIBO dépasse DU_SG_MAX");
-static_assert(DU_SG_FVG().last    <= DU_SG_MAX, "DU_SG_FVG dépasse DU_SG_MAX");
-static_assert(DU_SG_ZONE().last   <= DU_SG_MAX, "DU_SG_ZONE dépasse DU_SG_MAX");
-static_assert(DU_SG_MDHG().last   <= DU_SG_MAX, "DU_SG_MDHG dépasse DU_SG_MAX");
-static_assert(DU_SG_PRF().last    <= DU_SG_MAX, "DU_SG_PRF dépasse DU_SG_MAX");
-static_assert(DU_SG_LIQ().last    <= DU_SG_MAX, "DU_SG_LIQ dépasse DU_SG_MAX");
+static_assert(DU_SG_DOM					().last    	<= DU_SG_MAX	, "DU_SG_DOM dépasse DU_SG_MAX"			);
+static_assert(DU_SG_TAPE				().last   	<= DU_SG_MAX	, "DU_SG_TAPE dépasse DU_SG_MAX"		);
+static_assert(DU_SG_VWAP				().last   	<= DU_SG_MAX	, "DU_SG_VWAP dépasse DU_SG_MAX"		);
+static_assert(DU_SG_PROFILE				().last		<= DU_SG_MAX	, "DU_SG_PROFILE dépasse DU_SG_MAX"		);
+static_assert(DU_SG_OHLC				().last   	<= DU_SG_MAX	, "DU_SG_OHLC dépasse DU_SG_MAX"		);
+static_assert(DU_SG_RANGE				().last  	<= DU_SG_MAX	, "DU_SG_RANGE dépasse DU_SG_MAX"		);
+static_assert(DU_SG_PIVOT				().last  	<= DU_SG_MAX	, "DU_SG_PIVOT dépasse DU_SG_MAX"		);
+static_assert(DU_SG_FIBO				().last   	<= DU_SG_MAX	, "DU_SG_FIBO dépasse DU_SG_MAX"		);
+static_assert(DU_SG_FVG					().last    	<= DU_SG_MAX	, "DU_SG_FVG dépasse DU_SG_MAX"			);
+static_assert(DU_SG_ZONE				().last   	<= DU_SG_MAX	, "DU_SG_ZONE dépasse DU_SG_MAX"		);
+static_assert(DU_SG_MDHG				().last   	<= DU_SG_MAX	, "DU_SG_MDHG dépasse DU_SG_MAX"		);
+static_assert(DU_SG_PRF					().last    	<= DU_SG_MAX	, "DU_SG_PRF dépasse DU_SG_MAX"			);
+static_assert(DU_SG_LIQ					().last    	<= DU_SG_MAX	, "DU_SG_LIQ dépasse DU_SG_MAX"			);
 
 // Comptages attendus (mapping figé v1)
-static_assert(duSgCount(DU_SG_DOM())    == 24, "DOM_ENGINE_V2 doit exposer 24 SG.");
-static_assert(duSgCount(DU_SG_TAPE())   == 16, "TAPE_ENGINE_V1 doit exposer 16 SG.");
-static_assert(duSgCount(DU_SG_VWAP())   ==  8, "VWAP_ENGINE doit exposer 8 SG.");
-static_assert(duSgCount(DU_SG_PROFILE())==  8, "PROFILE_ENGINE doit exposer 8 SG.");
-static_assert(duSgCount(DU_SG_OHLC())   ==  8, "OHLC_ENGINE doit exposer 8 SG.");
-static_assert(duSgCount(DU_SG_RANGE())  ==  8, "RANGE_ENGINE doit exposer 8 SG.");
-static_assert(duSgCount(DU_SG_PIVOT())  ==  8, "PIVOT_ENGINE doit exposer 8 SG.");
-static_assert(duSgCount(DU_SG_FIBO())   ==  8, "FIBO_ENGINE doit exposer 8 SG.");
-static_assert(duSgCount(DU_SG_FVG())    ==  8, "FVG_ENGINE doit exposer 8 SG.");
-static_assert(duSgCount(DU_SG_ZONE())   ==  8, "ZONE_ENGINE doit exposer 8 SG.");
-static_assert(duSgCount(DU_SG_MDHG())   == 16, "MDHG_ENGINE doit exposer 16 SG.");
-static_assert(duSgCount(DU_SG_PRF())    ==  8, "PRF_ENGINE doit exposer 8 SG.");
-static_assert(duSgCount(DU_SG_LIQ())    ==  8, "LIQRISK_ENGINE doit exposer 8 SG.");
+static_assert(duSgCount(DU_SG_DOM		()		)   == 24			, "DOM_ENGINE_V2 doit exposer 24 SG."	);
+static_assert(duSgCount(DU_SG_TAPE		()		)   == 16			, "TAPE_ENGINE_V1 doit exposer 16 SG."	);
+static_assert(duSgCount(DU_SG_VWAP		()		)   ==  8			, "VWAP_ENGINE doit exposer 8 SG."		);
+static_assert(duSgCount(DU_SG_PROFILE	()		)	==  8			, "PROFILE_ENGINE doit exposer 8 SG."	);
+static_assert(duSgCount(DU_SG_OHLC		()		)   ==  8			, "OHLC_ENGINE doit exposer 8 SG."		);
+static_assert(duSgCount(DU_SG_RANGE		()		)	==  8			, "RANGE_ENGINE doit exposer 8 SG."		);
+static_assert(duSgCount(DU_SG_PIVOT		()		)	==  8			, "PIVOT_ENGINE doit exposer 8 SG."		);
+static_assert(duSgCount(DU_SG_FIBO		()		)	==  8			, "FIBO_ENGINE doit exposer 8 SG."		);
+static_assert(duSgCount(DU_SG_FVG		()		)   ==  8			, "FVG_ENGINE doit exposer 8 SG."		);
+static_assert(duSgCount(DU_SG_ZONE		()		)   ==  8			, "ZONE_ENGINE doit exposer 8 SG."		);
+static_assert(duSgCount(DU_SG_MDHG		()		)   == 16			, "MDHG_ENGINE doit exposer 16 SG."		);
+static_assert(duSgCount(DU_SG_PRF		()		)   ==  8			, "PRF_ENGINE doit exposer 8 SG."		);
+static_assert(duSgCount(DU_SG_LIQ		()		)   ==  8			, "LIQRISK_ENGINE doit exposer 8 SG."	);
 
 // ============================================================================
 // 4) Helpers d’usage pour les SIGNALS / ENGINES
 // ============================================================================
 
 // Vérification runtime très légère d'une plage (défensive)
-inline void duCheckSgRange(const SCStudyInterfaceRef sc, DU_SgRange r)
+inline void 	duCheckSgRange(const SCStudyInterfaceRef sc, DU_SgRange r)
 {
   if (r.first < 1 || r.last < r.first || r.last > SC_MAX_NUM_STUDY_SUBGRAPHS)
   {
@@ -228,13 +225,13 @@ inline void duCheckSgRange(const SCStudyInterfaceRef sc, DU_SgRange r)
 }
 
 // Helper générique pour tester si un SG index appartient à une famille
-constexpr bool duSgInRange(DU_SgRange r, int sgIndex) noexcept
+constexpr bool 	duSgInRange(DU_SgRange r, int sgIndex) noexcept
 {
   return (sgIndex >= r.first && sgIndex <= r.last);
 }
 
 // Convertir un index SG global en index local 0..N-1 dans la plage
-constexpr int duSgLocalIndex(DU_SgRange r, int sgIndex) noexcept
+constexpr int 	duSgLocalIndex(DU_SgRange r, int sgIndex) noexcept
 {
   return sgIndex - r.first; // l'appelant doit garantir duSgInRange(r, sgIndex)
 }

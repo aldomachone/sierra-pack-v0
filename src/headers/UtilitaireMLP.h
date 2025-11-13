@@ -1,13 +1,28 @@
 #pragma once
 #include <cstdio>
 #include <cstring>
+#include <cstddef>
 #include "sierrachart.h"
+
 
 namespace du {
 
-// Politique I/O globale
-static const int MLP_IO_MAX_ERRORS = 100;   // nb max d'erreurs avant coupure
-static const int MLP_IO_RETRY_MS   = 60000; // délai de retry auto en ms
+// Politique I/O globale (Pack_v0)
+// - Après MLP_IO_MAX_ERRORS erreurs OPEN/WRITE/FLUSH sur un même fichier,
+//   les I/O MLP sont gelées pour au moins MLP_IO_RETRY_MS millisecondes.
+// - Cette politique est appliquée via MLP_IoRegisterError() / MLP_IoIsDisabled().
+
+#ifdef PACK_V0_IO_MAX_ERRORS
+static const int MLP_IO_MAX_ERRORS = PACK_V0_IO_MAX_ERRORS;
+#else
+static const int MLP_IO_MAX_ERRORS = 100;    // nb max d'erreurs avant coupure
+#endif
+
+#ifdef PACK_V0_IO_RETRY_MS
+static const int MLP_IO_RETRY_MS = PACK_V0_IO_RETRY_MS;
+#else
+static const int MLP_IO_RETRY_MS = 60000;    // délai de retry auto en ms
+#endif
 // ============================================================================
 // REGISTRE MLP — PROFIL GLOBAL / CONVENTIONS
 // ============================================================================
@@ -112,11 +127,7 @@ static const int MLP_IO_RETRY_MS   = 60000; // délai de retry auto en ms
 //         Permet de relier rapidement un fichier CSV à son contexte
 //         (symbole, timeframe logique, profondeur DOM, engine, côté BID/ASK, etc.)
 // ============================================================================
-#include "sierrachart.h"
-#include <stdio.h>
-#include <string.h>
-#include <math.h>
-#include <float.h>
+
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // Constantes / version de schéma
@@ -133,7 +144,16 @@ static const int MLP_IO_RETRY_MS   = 60000; // délai de retry auto en ms
 // 150..159 : registre erreurs I/O (MLP_TrackError)
 // 200..209 : stats / normalisation (EMA score, etc.)
 ////////////////////////////////////////////////////////////////////////////////////////////////////// CSV/BIN: version de schéma
-static inline int               MLP_SchemaVer						()	{ return 2			; } 
+////// CSV/BIN: version de schéma
+static inline constexpr int MLP_SchemaVer() { return 2; }
+
+// Si on est inclus via le pack, verrouiller la cohérence de version.
+#ifdef PACK_V0_SCHEMA_REV
+static_assert(
+  MLP_SchemaVer() == PACK_V0_SCHEMA_REV,
+  "UtilitaireMLP.h: MLP_SchemaVer() doit rester synchronisé avec PACK_V0_SCHEMA_REV."
+);
+#endif
 
 static inline int               MLP_BinMagic						()	{ return 0x4D4C5032 ; } 	// 'M' 'L' 'P' '2'
 
@@ -1032,7 +1052,12 @@ struct 							MLP_BinFileHeader
   int      						ParamsLen													;	// 0 pour l’instant
   int      						Reserved[4]													;	// 0
 }																							;
-
+// Verrous de layout binaire (doc + garde-fou)
+static_assert(sizeof(MLP_BinFileHeader) == 60,
+              "MLP_BinFileHeader: taille inattendue, format BIN potentiellement cassé.");
+static_assert(offsetof(MLP_BinFileHeader, DType) == 32,
+              "MLP_BinFileHeader: offset DType modifié, vérifier compat BIN.");
+ 
 struct                          MLP_BinRowHeader											{
   long long 					UtcMs														;
   int       					BarIndex													;
@@ -1052,6 +1077,10 @@ struct                          MLP_BinRowHeader											{
   int       					Magic														;	// 0x4D4C5032 = 'MLP2'
   int       					Endian														;	// 0 = little, 1 = big
 };
+static_assert(sizeof(MLP_BinRowHeader) == 64,
+              "MLP_BinRowHeader: taille inattendue, format BIN potentiellement cassé.");
+static_assert(offsetof(MLP_BinRowHeader, DType) == 60,
+              "MLP_BinRowHeader: offset DType modifié, vérifier compat BIN.");
 
 static inline 					FILE* MLP_BIN_Get					(SCStudyInterfaceRef sc, const int pFileId = 110)
 {
