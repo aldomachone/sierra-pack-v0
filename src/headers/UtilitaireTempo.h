@@ -1,6 +1,5 @@
 #pragma once
 #include "sierrachart.h"
-
 // ============================================================================
 // UtilitaireTempo.h — Helpers de temps/horloge pour ACSIL (Sierra Chart)
 // - Conversions SCDateTime → millisecondes
@@ -12,7 +11,6 @@
 // - Utilitaires génériques (clamp, diff sûrs)
 // ----------------------------------------------------------------------------
 // Conventions :
-// - Toutes les fonctions sont inline, sans allocation, sans static global.
 // - Source unique de temps : nowMs()/duNowMs().
 // ============================================================================
 namespace du
@@ -24,26 +22,26 @@ constexpr double 	kDayToMs = 24.0 * 3600.0 * 1000.0	;
 constexpr double 	kSecToMs = 1000.0					;
 
 // Convertit un SCDateTime (jour julien fractionnaire Sierra) en millisecondes.
-inline long long 	toMs(SCDateTime t) noexcept
+inline long long 	toMs					(SCDateTime t									)	noexcept
 {
   const double ms = static_cast<double>(t) * kDayToMs;
   return static_cast<long long>(ms + 0.5);
 }
 
 // ms depuis epoch selon l’horloge système (Sierra fournit CurrentSystemDateTimeMS).
-inline long long 	nowMs(const SCStudyInterfaceRef& sc) noexcept
+inline long long 	nowMs					(const SCStudyInterfaceRef& sc					)	noexcept
 {
   return toMs(sc.CurrentSystemDateTimeMS);
 }
 
 // Alias de compatibilité (anciens codes : V9G, Stop-Run, etc.).
-inline long long 	duNowMs(const SCStudyInterfaceRef& sc) noexcept
+inline long long 	duNowMs					(const SCStudyInterfaceRef& sc					)	noexcept
 {
   return nowMs(sc);
 }
 
 // ms de la barre idx selon l’horloge du chart.
-inline long long 	barTimeMs				(const SCStudyInterfaceRef& sc, int idx) noexcept
+inline long long 	barTimeMs				(const SCStudyInterfaceRef& sc, int idx			)	noexcept
 {
   if (sc.ArraySize <= 0)
     return 0;
@@ -58,7 +56,7 @@ inline long long 	barTimeMs				(const SCStudyInterfaceRef& sc, int idx) noexcept
 }
 
 // Nanosecondes système (non dispo nativement dans ACSIL). Placeholder neutre.
-inline long long 	duNowNs					(SCStudyInterfaceRef) noexcept
+inline long long 	duNowNs					(SCStudyInterfaceRef							)	noexcept
 {
   return 0;
 }
@@ -71,7 +69,7 @@ inline long long 	duNowNs					(SCStudyInterfaceRef) noexcept
 //   - lastYmd doit être initialisé par l’appelant (ex. 0 ou un YMD impossible)
 //     avant la première utilisation.
 //   - À chaque retour true, lastYmd est mis à jour avec le YMD courant.
-inline bool 		newTradingDay			(const SCStudyInterfaceRef& sc, int& lastYmd	) noexcept
+inline bool 		newTradingDay			(const SCStudyInterfaceRef& sc, int& lastYmd	)	noexcept
 {
   if (sc.ArraySize <= 0)
     return false;
@@ -92,7 +90,7 @@ inline bool 		newTradingDay			(const SCStudyInterfaceRef& sc, int& lastYmd	) noe
 }
 
 // Variante “à la volée” sur la dernière barre connue.
-inline bool 		duIsNewTradingDay		(const SCStudyInterfaceRef& sc, int lastDateYMD) noexcept
+inline bool 		duIsNewTradingDay		(const SCStudyInterfaceRef& sc, int lastDateYMD	)	noexcept
 {
   if (sc.ArraySize <= 0)
     return false;
@@ -102,7 +100,7 @@ inline bool 		duIsNewTradingDay		(const SCStudyInterfaceRef& sc, int lastDateYMD
 }
 
 // Retourne l’index de la première barre de la journée courante. O(N backscan) borné.
-inline int 			firstIndexOfToday		(const SCStudyInterfaceRef& sc) noexcept
+inline int 			firstIndexOfToday		(const SCStudyInterfaceRef& sc					)	noexcept
 {
   if (sc.ArraySize <= 0)
     return 0;
@@ -122,7 +120,7 @@ inline int 			firstIndexOfToday		(const SCStudyInterfaceRef& sc) noexcept
 
 // Durée écoulée de la session courante en ms, mesurée entre la première barre du jour
 // et l’horloge “chart” de la barre courante.
-inline long long 	duSessionElapsedMs		(const SCStudyInterfaceRef& sc) noexcept
+inline long long 	duSessionElapsedMs		(const SCStudyInterfaceRef& sc					)	noexcept
 {
   if (sc.ArraySize <= 0)
     return 0;
@@ -160,9 +158,8 @@ inline long long 	duSafeDiffMs			(long long newerMs, long long olderMs			)	noexc
   return newerMs > olderMs ? (newerMs - olderMs) : 0LL;
 }
 
-// ---------------------------------------------------------------------------
-// Échelles temporelles chart
-// ---------------------------------------------------------------------------
+/////////////////////////////////////////////////////////////////////////////////////////////////////////	Échelles temporelles chart
+
 
 // Secondes équivalentes à N barres.
 // - Si SecondsPerBar > 0, on l’utilise directement.
@@ -194,9 +191,7 @@ inline double 		secFromBars				(const SCStudyInterfaceRef& sc, int bars		)	noexc
   return static_cast<double>(bars); // fallback 1 s/bar
 }
 
-// ---------------------------------------------------------------------------
-// Skew horloge
-// ---------------------------------------------------------------------------
+/////////////////////////////////////////////////////////////////////////////////////////////////////////	Skew horloge
 
 // Estime l’écart horloge système vs horloge chart en secondes.
 // Signé : positif si système “en avance” vs chart.
@@ -208,9 +203,8 @@ inline double 		duClockSkewEstimate		(const SCStudyInterfaceRef& sc,
   return static_cast<double>(skewMs) / kSecToMs;
 }
 
-// ---------------------------------------------------------------------------
-// Debounce sans état global
-// ---------------------------------------------------------------------------
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////	Debounce sans état global
 
 // Debounce paramétrique :
 // - lastFireMs : timestamp ms du dernier “fire” (à conserver par l’appelant)
@@ -239,7 +233,7 @@ inline bool 		duDebounceMs			(long long& lastFireMs,
   return true;
 }
 
-// Variante compatible avec signature initiale “state only” :
+// Signature initiale “state only” :
 // - Stocke le dernier fire dans un PersistentInt64 indexé par l’appelant.
 inline bool 		duDebounceMs_Persist	(SCStudyInterfaceRef sc,
                                  int                  persistIdxForLastMs,
@@ -251,12 +245,8 @@ inline bool 		duDebounceMs_Persist	(SCStudyInterfaceRef sc,
   return duDebounceMs(lastMs, nowMsVal, minGapMs, state);
 }
 
-// ---------------------------------------------------------------------------
-// Helpers divers
-// ---------------------------------------------------------------------------
-
-// Vrai une fois par nouvelle barre. lastIndex est fourni par l’appelant.
-inline bool 		duIsNewBar				(const SCStudyInterfaceRef& sc, int& lastIndex	)	noexcept
+/////////////////////////////////////////////////////////////////////////////////////////////////////////	Helpers divers
+inline bool 		duIsNewBar				(const SCStudyInterfaceRef& sc, int& lastIndex	)	noexcept	// Vrai une fois par nouvelle barre. lastIndex est fourni par l’appelant.
 {
   if (sc.Index != lastIndex)
   {
@@ -265,16 +255,13 @@ inline bool 		duIsNewBar				(const SCStudyInterfaceRef& sc, int& lastIndex	)	noe
   }
   return false;
 }
-
-// Proxy pratique sur le flag plateforme.
-inline bool 		duIsFullRecalculation	(const SCStudyInterfaceRef& sc					)	noexcept
+inline bool 		duIsFullRecalculation	(const SCStudyInterfaceRef& sc					)	noexcept	// Proxy pratique sur le flag plateforme.
 {
   return sc.IsFullRecalculation;
 }
 
-// Incrémente avec saturation [lo, hi].
 template 			<typename T>
-inline void 		duSaturatingAdd			(T& v, T delta, T lo, T hi						)	noexcept
+inline void 		duSaturatingAdd			(T& v, T delta, T lo, T hi						)	noexcept	// Incrémente avec saturation [lo, hi].
 {
   if (delta > 0 && v > hi - delta) { v = hi; return; }
   if (delta < 0 && v < lo - delta) { v = lo; return; }
