@@ -501,14 +501,14 @@ Matrice de builds à tester (QA minimale):
 namespace du { namespace pack {
 
   // Disponibilités (constexpr → aucun coût)
-  constexpr bool has_core()       { return PACK_V0_ENABLE_CORE         != 0; }
-  constexpr bool has_mlp()        { return PACK_V0_ENABLE_MLP          != 0; }
-  constexpr bool has_dom()        { return PACK_V0_ENABLE_DOM          != 0; }
-  constexpr bool has_tape()       { return PACK_V0_ENABLE_TAPE         != 0; }
-  constexpr bool has_ctx()        { return PACK_V0_ENABLE_CONTEXTE     != 0; }
-  constexpr bool has_zones()      { return PACK_V0_ENABLE_ZONES        != 0; }
-  constexpr bool has_mtf()        { return PACK_V0_ENABLE_MTF          != 0; }
-  constexpr bool has_memrisk()    { return PACK_V0_ENABLE_MEMORY_RISK  != 0; }
+  constexpr bool	has_core	() 	{ return PACK_V0_ENABLE_CORE         != 0	;	}
+  constexpr bool	has_mlp		() 	{ return PACK_V0_ENABLE_MLP          != 0	;	}
+  constexpr bool	has_dom		() 	{ return PACK_V0_ENABLE_DOM          != 0	;	}
+  constexpr bool	has_tape	() 	{ return PACK_V0_ENABLE_TAPE         != 0	;	}
+  constexpr bool	has_ctx		() 	{ return PACK_V0_ENABLE_CONTEXTE     != 0	;	}
+  constexpr bool	has_zones	() 	{ return PACK_V0_ENABLE_ZONES        != 0	;	}
+  constexpr bool	has_mtf		() 	{ return PACK_V0_ENABLE_MTF          != 0	;	}
+  constexpr bool	has_memrisk	()	{ return PACK_V0_ENABLE_MEMORY_RISK  != 0	;	}
 
   // Offsets TAPE si agrégateur présent (UtilitaireTape.h)
   #if defined(DU_TAPE_PACK_VER)
@@ -527,35 +527,35 @@ namespace du { namespace pack {
   // (Éventuellement plus tard: offsets DOM si pack DOM exposé.)
 
   // Métadonnées pack (fonctions + constantes)
-  constexpr int version()    { return (int)PACK_V0_VERSION; }
-  constexpr int schema_rev() { return (int)PACK_V0_SCHEMA_REV; }
-  constexpr int featsig_v1() { return (int)PACK_V0_FEATSIG_V1; }
+  constexpr int		version		()	{ return (int)PACK_V0_VERSION				;	}
+  constexpr int		schema_rev	()	{ return (int)PACK_V0_SCHEMA_REV			;	}
+  constexpr int		featsig_v1	()	{ return (int)PACK_V0_FEATSIG_V1			;	}
 
-  constexpr int kVersion   = (int)PACK_V0_VERSION;
-  constexpr int kSchemaRev = (int)PACK_V0_SCHEMA_REV;
-  constexpr int kFeatSigV1 = (int)PACK_V0_FEATSIG_V1;
+  constexpr int		kVersion   	=	(int)PACK_V0_VERSION						;
+  constexpr int		kSchemaRev 	=	(int)PACK_V0_SCHEMA_REV						;
+  constexpr int		kFeatSigV1 	=	(int)PACK_V0_FEATSIG_V1						;
 
-  // Helper de log de configuration (facultatif, coût nul si non appelé).
-  inline void log_config(SCStudyInterfaceRef sc){
-    SCString s("PACK_V0: ver=");
-    s += kVersion;
-    s += " schema=";
-    s += kSchemaRev;
-    s += " core=";
-    s += has_core();
-    s += " dom=";
-    s += has_dom();
-    s += " tape=";
-    s += has_tape();
-    s += " ctx=";
-    s += has_ctx();
-    s += " zones=";
-    s += has_zones();
-    s += " mtf=";
-    s += has_mtf();
-    s += " memrisk=";
-    s += has_memrisk();
-    PACK_V0_LOG_ONCE(sc, "PACK_V0_CONFIG", s);
+  // Helper de log de configuration
+  inline void 		log_config		(SCStudyInterfaceRef sc){
+    SCString		s				("PACK_V0: ver=")		;
+					s			+=	kVersion				;
+					s			+=	" schema="				;
+					s			+=	kSchemaRev				;
+					s			+=	" core="				;
+					s			+=	has_core	()			;
+					s			+=	" dom="					;
+					s			+=	has_dom		()			;
+					s			+=	" tape="				;
+					s			+=	has_tape	()			;
+					s			+=	" ctx="					;
+					s			+=	has_ctx		()			;
+					s			+=	" zones="				;
+					s			+=	has_zones	()			;
+					s			+=	" mtf="					;
+					s			+=	has_mtf		()			;
+					s			+=	" memrisk="				;
+					s			+=	has_memrisk	()			;
+	PACK_V0_LOG_ONCE(sc, "PACK_V0_CONFIG", s);
 
     // Logs d'agrégateurs ignorés (header présent mais PACK_V0_USE_AGGREGATORS=0)
     #if defined(PACK_V0_TAPE_AGGREGATOR_AVAILABLE) && !PACK_V0_USE_AGGREGATORS
@@ -569,7 +569,7 @@ namespace du { namespace pack {
   }
 
   // Helper d'usage: vérifier qu'une étude DOM est bien compilée avec DOM activé.
-  inline bool require_dom(SCStudyInterfaceRef sc){
+  inline bool 		require_dom		(SCStudyInterfaceRef sc){
     if (!has_dom()){
       PACK_V0_LOG_ONCE(sc, "PACK_V0_REQUIRE_DOM",
                        "Cette étude attend PACK_V0_ENABLE_DOM=1 dans PackUtilitaires_v0.h.");
