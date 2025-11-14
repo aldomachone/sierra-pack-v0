@@ -218,7 +218,7 @@ static_assert(duSgCount(DU_SG_LIQ		()		)   ==  8			, "LIQRISK_ENGINE doit expose
 // Vérification runtime très légère d'une plage (défensive)
 inline void 	duCheckSgRange(const SCStudyInterfaceRef sc, DU_SgRange r)
 {
-  if (r.first < 1 || r.last < r.first || r.last > SC_MAX_NUM_STUDY_SUBGRAPHS)
+  if (r.first < 1 || r.last < r.first || r.last > MAX_STUDY_SUBGRAPHS)
   {
     sc.AddMessageToLog("DU: SG range invalide (first/last).", 1);
   }
@@ -269,7 +269,7 @@ constexpr DU_SgRange duGetLiqRange()     noexcept { return DU_SG_LIQ();    }
 // registre interne (voir macro DU_FEATREG_REGISTER_LAYOUT).
 // ============================================================================
 
-inline void duPublishFeatureLayout(const SCStudyInterfaceRef sc,
+inline void		duPublishFeatureLayout	(const SCStudyInterfaceRef sc,
                                    const char* family,
                                    DU_SgRange  r,
                                    const char* const* names)
@@ -298,7 +298,7 @@ inline void duPublishFeatureLayout(const SCStudyInterfaceRef sc,
 }
 
 // Overload de compat : ancienne signature (sans DU_SgRange)
-inline void duPublishFeatureLayout(const SCStudyInterfaceRef sc,
+inline void		duPublishFeatureLayout	(const SCStudyInterfaceRef sc,
                                    const char* family,
                                    const char* const* names,
                                    int count)

@@ -26,24 +26,22 @@
 // =============================================================================
 
 namespace du {
-
-// ---- Types de base ----------------------------------------------------------
-
-enum duSide       : int { DU_BID = 0, DU_ASK = 1 };
-enum duGateMode   : int { DU_FREEZE = 0, DU_ZERO = 1, DU_CONTINUE = 2 };
-enum duCrossState : int { DU_BELOW = 0, DU_CROSSUP = 1, DU_ABOVE = 2, DU_CROSSDOWN = 3 };
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////	Types de base
+enum 					duSide       : int 		{ DU_BID 	= 0, DU_ASK 	= 1 									};
+enum 					duGateMode   : int 		{ DU_FREEZE = 0, DU_ZERO 	= 1, DU_CONTINUE = 2 					};
+enum 					duCrossState : int 		{ DU_BELOW 	= 0, DU_CROSSUP = 1, DU_ABOVE 	 = 2, DU_CROSSDOWN = 3 	};
 
 struct duZone
 {
-  double lo{0.0};
-  double hi{0.0};
+  double 				lo{0.0}																						;
+  double 				hi{0.0}																						;
 };
 
-constexpr double DU_EPS = 1e-12;
+constexpr double 		DU_EPS = 1e-12;
 
-// ---- Familles SG et bornes figées -----------------------------------------
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////	Familles SG et bornes figées
 
-enum duSgFamily : int
+enum 					duSgFamily : int
 {
   SGF_NONE    = 0,
   SGF_DOM     = 1, // 1..24
@@ -54,7 +52,7 @@ enum duSgFamily : int
   SGF_LIQRISK = 6  // 1..8
 };
 
-constexpr int sgfLo(duSgFamily f) noexcept
+constexpr int 			sgfLo					(duSgFamily f)					noexcept
 {
   switch (f)
   {
@@ -68,7 +66,7 @@ constexpr int sgfLo(duSgFamily f) noexcept
   }
 }
 
-constexpr int sgfHi(duSgFamily f) noexcept
+constexpr int 			sgfHi					(duSgFamily f)					noexcept
 {
   switch (f)
   {
@@ -82,10 +80,10 @@ constexpr int sgfHi(duSgFamily f) noexcept
   }
 }
 
-// ---- Hachage léger et log-once --------------------------------------------
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////	 Hachage léger et log-once
 
 // FNV-1a 32-bit, utilisable en constexpr (C++17+).
-constexpr uint32_t duHash32(const char* s) noexcept
+constexpr uint32_t 		duHash32				(const char* s)					noexcept
 {
   if (!s)
     return 0u;
@@ -100,7 +98,7 @@ constexpr uint32_t duHash32(const char* s) noexcept
   return h;
 }
 
-inline void duLogOnce(SCStudyInterfaceRef sc,
+inline void 			duLogOnce				(SCStudyInterfaceRef sc,
                       const char*        key,
                       const char*        msg)
 {
@@ -115,9 +113,9 @@ inline void duLogOnce(SCStudyInterfaceRef sc,
   }
 }
 
-// ---- Accès arrays d’autres études -----------------------------------------
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////	 Accès arrays d’autres études
 
-inline bool getStudyArray(const SCStudyInterfaceRef& sc,
+inline bool 			getStudyArray			(const SCStudyInterfaceRef& sc,
                           int                        studyId,
                           int                        subgraphIdx,
                           SCFloatArray&              out)
@@ -125,7 +123,7 @@ inline bool getStudyArray(const SCStudyInterfaceRef& sc,
   return sc.GetStudyArrayUsingID(studyId, subgraphIdx, out) != 0;
 }
 
-inline bool getStudyArrayFromChart(const SCStudyInterfaceRef& sc,
+inline bool 			getStudyArrayFromChart	(const SCStudyInterfaceRef& sc,
                                    int                        chart,
                                    int                        studyId,
                                    int                        subgraphIdx,
@@ -135,7 +133,7 @@ inline bool getStudyArrayFromChart(const SCStudyInterfaceRef& sc,
   return out.GetArraySize() > 0;
 }
 
-inline bool tryGetStudyValue(const SCStudyInterfaceRef& sc,
+inline bool 			tryGetStudyValue		(const SCStudyInterfaceRef& sc,
                              int                        studyId,
                              int                        subgraphIdx,
                              int                        barIndex,
@@ -153,11 +151,10 @@ inline bool tryGetStudyValue(const SCStudyInterfaceRef& sc,
   return true;
 }
 
-// ---- Compat indices SG -----------------------------------------------------
-// v2 : identité par défaut. Crochet pour remap futur selon schéma/versions.
-// Retourne true et écrit newIdx même si identité.
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////	Compat indices SG
+// v2 : identité par défaut. Crochet pour remap futur selon schéma/versions. Retourne true et écrit newIdx même si identité.
 
-inline bool duCompatIdx(int oldIdx, int* newIdx) noexcept
+inline bool 			duCompatIdx				(int oldIdx, int* newIdx) 		noexcept
 {
   if (newIdx)
     *newIdx = oldIdx;
@@ -165,7 +162,7 @@ inline bool duCompatIdx(int oldIdx, int* newIdx) noexcept
 }
 
 // Variante avec borne familiale. Coupe aux bornes si hors plage.
-inline bool duCompatIdx(int        oldIdx,
+inline bool 			duCompatIdx				(int oldIdx,
                         duSgFamily fam,
                         int        /*schemaVer*/,
                         int*       newIdx) noexcept
@@ -183,9 +180,9 @@ inline bool duCompatIdx(int        oldIdx,
   return true;
 }
 
-// ---- Compat SG fixés -------------------------------------------------------
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////	 Compat SG fixés
 // Par défaut retourne l’index fourni. Sert de point d’injection si une famille migre.
-inline int duCompatSg(SCStudyInterfaceRef /*sc*/,
+inline int 				duCompatSg				(SCStudyInterfaceRef /*sc*/,
                       int                 family,
                       int                 sgFixed) noexcept
 {
@@ -199,16 +196,15 @@ inline int duCompatSg(SCStudyInterfaceRef /*sc*/,
   return std::max(lo, std::min(hi, sgFixed));
 }
 
-// ---- Compat Inputs : recherche par nom normalisé ---------------------------
-
-inline void trimLeftDigitsDotSpace(const char*& p) noexcept
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////	 Compat Inputs : recherche par nom normalisé
+inline void 			trimLeftDigitsDotSpace	(const char*& p)				noexcept
 {
   while (*p && ((*p >= '0' && *p <= '9') || *p == '.' || *p == ' '))
     ++p;
 }
 
 // Comparaison insensible à la casse, en ignorant un éventuel préfixe "01. ".
-inline bool nameEqualsNorm(const char* a, const char* b) noexcept
+inline bool 			nameEqualsNorm			(const char* a, const char* b)	noexcept
 {
   if (!a || !b)
     return false;
@@ -238,7 +234,7 @@ inline bool nameEqualsNorm(const char* a, const char* b) noexcept
   }
 }
 
-inline int findInputIndexByName(const SCStudyInterfaceRef& sc,
+inline int 				findInputIndexByName	(const SCStudyInterfaceRef& sc,
                                 const char*                wanted)
 {
   if (!wanted)
@@ -256,7 +252,7 @@ inline int findInputIndexByName(const SCStudyInterfaceRef& sc,
   return -1;
 }
 
-inline int duCompatInput(const SCStudyInterfaceRef& sc,
+inline int 				duCompatInput			(const SCStudyInterfaceRef& sc,
                          const char*                wantedName,
                          int                        fallbackIdx)
 {
@@ -264,17 +260,17 @@ inline int duCompatInput(const SCStudyInterfaceRef& sc,
   return (k >= 0 ? k : fallbackIdx);
 }
 
-// ---- Feature signature ------------------------------------------------------
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////	 Feature signature
 
 // Version v0 : pas de log, juste un test simple.
-inline bool duCompatCheckFeatSig(int expected,
+inline bool 			duCompatCheckFeatSig	(int expected,
                                  int actual) noexcept
 {
   return expected == actual;
 }
 
 // Version v2 : avec SC pour log via duLogOnce.
-inline bool duCompatCheckFeatSig(SCStudyInterfaceRef sc,
+inline bool 			duCompatCheckFeatSig	(SCStudyInterfaceRef sc,
                                  int                 expected,
                                  int                 actual)
 {
@@ -289,9 +285,8 @@ inline bool duCompatCheckFeatSig(SCStudyInterfaceRef sc,
   return false;
 }
 
-// ---- Sécurité bornes SG/Inputs --------------------------------------------
-
-inline int clampSgIndex(int idx) noexcept
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////	Sécurité bornes SG/Inputs
+inline int 				clampSgIndex			(int idx) 						noexcept
 {
   if (idx < 0)
     idx = 0;
@@ -299,8 +294,7 @@ inline int clampSgIndex(int idx) noexcept
     idx = SC_SUBGRAPH_MAX - 1;
   return idx;
 }
-
-inline int clampInputIndex(int idx) noexcept
+inline int 				clampInputIndex			(int idx) 						noexcept
 {
   if (idx < 0)
     idx = 0;
@@ -309,13 +303,13 @@ inline int clampInputIndex(int idx) noexcept
   return idx;
 }
 
-// ---- Cross helpers simples --------------------------------------------------
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////	 Cross helpers simples
 // Note : par design, si prev == level et now > level, on retourne DU_ABOVE
 // (et non DU_CROSSUP). Les seuls véritables "cross" sont :
 //  - DU_CROSSUP   : prev < level, now > level
 //  - DU_CROSSDOWN : prev > level, now < level
 
-inline duCrossState crossState(double prev,
+inline 					duCrossState crossState	(double prev,
                                double now,
                                double level) noexcept
 {
@@ -331,15 +325,14 @@ inline duCrossState crossState(double prev,
   return nowAbove ? DU_ABOVE : DU_BELOW;
 }
 
-// ---- Gate mode to string ----------------------------------------------------
-
-inline const char* gateModeName(duGateMode m) noexcept
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////	 Gate mode to string
+inline const char* 		gateModeName			(duGateMode m)					noexcept
 {
   switch (m)
   {
-    case DU_FREEZE: return "FREEZE";
-    case DU_ZERO:   return "ZERO";
-    default:        return "CONTINUE";
+    case DU_FREEZE	: return "FREEZE"		;
+    case DU_ZERO	: return "ZERO"			;
+    default			: return "CONTINUE"		;
   }
 }
 
